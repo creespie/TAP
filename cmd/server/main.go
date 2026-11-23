@@ -7,12 +7,22 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"bufio"
 )
 
-func handleConnect(conn net.Conn) {
+func handleConnect(conn net.Conn, counter int) {
 	fmt.Println("connected:", conn.RemoteAddr())
+	defer fmt.Printf("disconnected client number %d\n", counter)
 	defer conn.Close()
-	fmt.Fprint(conn, "OK hello proto=1\n")
+	fmt.Fprintln(conn, "OK hello client number", counter)
+	reader := bufio.NewReader(conn)
+	for{
+		line, err := reader.ReadString('\n')
+		if err != nil{
+			return 
+		}
+		fmt.Fprintf(conn, "ECHO %s", line)
+	}
 }
 
 func main() {
@@ -30,6 +40,7 @@ func main() {
 	}
 	defer ln.Close()
 	fmt.Printf("Listening on %s\n", ln.Addr())
+	counter := 1
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
@@ -40,7 +51,8 @@ func main() {
 			fmt.Fprintln(os.Stderr, "error:", err)
 			continue
 		}
-		go handleConnect(conn)
+		go handleConnect(conn, counter)
+		counter += 1
 	}
 
 }
