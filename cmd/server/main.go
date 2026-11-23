@@ -1,34 +1,68 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"flag"
 	"fmt"
 	"net"
 	"os"
 	"strconv"
-	"bufio"
+	"strings"
+	"unicode/utf8"
 )
 
+var ErrInvalidUTF8 = errors.New("invalid UTF-8")
+
+func cleanLine(raw string) (string, error) {
+	line := strings.TrimSuffix(raw, "\n")
+	line = strings.TrimSuffix(line, "\r")
+	if !utf8.ValidString(line) {
+		return "", ErrInvalidUTF8
+	}
+	return line, nil
+}
+
 func handleConnect(conn net.Conn, counter int) {
-	fmt.Println("connected:", conn.RemoteAddr())
+	fmt.Printf("connected client %d: %s\n", counter, conn.RemoteAddr())
 	defer fmt.Printf("disconnected client number %d\n", counter)
 	defer conn.Close()
-	fmt.Fprintln(conn, "OK hello client number", counter)
-	reader := bufio.NewReader(conn)
-	for{
-		line, err := reader.ReadString('\n')
-		if err != nil{
-			return 
+	fmt.Fprintln(conn, "OK hello proto=1")
+	reader := bufio.NewReaderSize(conn, 1024)
+	discarding := false
+	for {
+		raw, err := reader.ReadSlice('\n')
+		if err != nil {
+			if errors.Is(err, bufio.ErrBufferFull) && !discarding {
+				discarding = true
+				fmt.Fprintln(conn, "ERR 400 BAD_REQUEST")
+				continue
+			} else if errors.Is(err, bufio.ErrBufferFull) {
+				continue
+			} else {
+				return
+			}
 		}
-		fmt.Fprintf(conn, "ECHO %s", line)
+		if discarding {
+			discarding = false
+			continue
+		}
+		line, err := cleanLine(string(raw))
+		if err != nil {
+			fmt.Fprintln(conn, "ERR 400 BAD_REQUEST")
+			continue
+		}
+		if line == "" {
+			continue
+		}
+		fmt.Fprintf(conn, "ECHO %s\n", line)
 	}
 }
 
 func main() {
-	port := flag.Int("port", 4242, "TCP pport to listen on")
+	port := flag.Int("port", 4242, "TCP port to listen on")
 	world := flag.String("world", "world.json", "World file used to build the server's world")
-	seed := flag.Int64("seed", 1, "Seed to determine luck and random rolls inside the game")
+	seed := flag.Int64("seed", 0, "Seed to determine luck and random rolls inside the game")
 	host := flag.String("host", "", "Host address")
 
 	flag.Parse()
