@@ -7,7 +7,7 @@ import(
 
 type World struct{
 	Mu sync.Mutex
-	Rooms map[str]*Room
+	Rooms map[string]*Room
 	Players map[string]*Player
 }
 
@@ -16,7 +16,7 @@ type Room struct{
 	Objects map[string]*Object
 	Width, height int
 	Players map[string]*Player
-	AccessibleRooms map[str]*Room
+	AccessibleRooms map[string]*Room
 	NpcPosition [2]int
 	ObjPosition [2]int
 }
@@ -63,6 +63,11 @@ type Equipment struct{
 	Chestplate *Object
 	Boots *Object
 	Ring *Object
+}
+
+type Action struct{
+	Damage int
+	Sentence string
 }
 
 type Stats struct{
