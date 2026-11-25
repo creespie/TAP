@@ -7,11 +7,16 @@ import(
 
 type World struct{
 	Mu sync.Mutex
+	StartRoom *Room
+	PlayerStats Stats
 	Rooms map[string]*Room
 	Players map[string]*Player
 }
 
 type Room struct{
+	Name string
+	Description string
+	Safe bool
 	Npc map[string]*Npc
 	Objects map[string]*Object
 	Width, height int
@@ -22,8 +27,9 @@ type Room struct{
 }
 
 type Npc struct{
+	Name string
 	Hp int
-	IsAlice bool
+	IsAlive bool
 	Behaviour Behaviour
 	Dialogs map[int]string
 	Action map[int]*Action
@@ -40,6 +46,7 @@ type Quest struct{
 }
 
 type Object struct{
+	Name string
 	Category Category
 	Stat int
 	Description string
@@ -58,6 +65,7 @@ type Player struct{
 }
 
 type Equipment struct{
+	Name string
 	Weapon *Object
 	Helmet *Object
 	Chestplate *Object
