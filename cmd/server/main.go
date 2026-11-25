@@ -12,6 +12,7 @@ import (
 	"strings"
 	"syscall"
 	"tap/internal/transport"
+	"tap/internal/world"
 	"unicode/utf8"
 )
 
@@ -65,12 +66,18 @@ func handleConnect(conn net.Conn, counter int, registry *transport.ConnRegistry)
 
 func main() {
 	port := flag.Int("port", 4242, "TCP port to listen on")
-	world := flag.String("world", "world.json", "World file used to build the server's world")
+	worldPath := flag.String("world", "world.json", "World file used to build the server's world")
 	seed := flag.Int64("seed", 0, "Seed to determine luck and random rolls inside the game")
 	host := flag.String("host", "", "Host address")
 
 	flag.Parse()
-	fmt.Printf("%d %s %d\n", *port, *world, *seed)
+	fmt.Printf("%d %s %d\n", *port, *worldPath, *seed)
+	w, err := world.Load(*worldPath)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "error:", err)
+		os.Exit(1)
+	}
+	fmt.Printf("World loaded: %d rooms, %d items, %d npcs, %d quests\n", len(w.Rooms), len(w.Items), len(w.Npcs), len(w.Quests))
 	ln, err := net.Listen("tcp", net.JoinHostPort(*host, strconv.Itoa(*port)))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
