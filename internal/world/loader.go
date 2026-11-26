@@ -253,7 +253,7 @@ func build(fw *fileWorld) *World {
 			Name:        n.Name,
 			Description: n.Description,
 			Hp:          n.Hp,
-			IsAlice:     true,
+			IsAlive:     true,
 			Behaviour:   Behaviour(n.Behaviour),
 			Dialogs:     make(map[int]string, len(n.Dialogs)),
 			Action:      make(map[int]*Action, len(n.Actions)),

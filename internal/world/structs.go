@@ -34,7 +34,7 @@ type Npc struct {
 	Name        string
 	Description string
 	Hp          int
-	IsAlice     bool
+	IsAliVe     bool
 	Behaviour   Behaviour
 	Dialogs     map[int]string
 	Action      map[int]*Action
