@@ -78,6 +78,7 @@ func handleConnection(conn net.Conn, counter int, registry *transport.ConnRegist
 		transport.DispatchRequest(conn, line, w)
 	}
 }
+
 func main() {
 	port := flag.Int("port", 4242, "TCP port to listen on")
 	worldPath := flag.String("world", "world.json", "World file used to build the server's world")
