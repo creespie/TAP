@@ -48,19 +48,20 @@ type Npc struct {
 	Behaviour   Behaviour
 	Dialogs     map[int]string
 	Action      map[int]*Action
-	Quests      map[int]*Quest
+	Quest       *Quest
 }
 
 type Quest struct {
-	Id           string
-	Name         string
-	Description  string
-	Step         int
-	CompleteStep int
-	Instruction  map[int]string
-	Reward       Object // create a new copy and place it in the player inventory
-	Progression  map[int]*Player
-	Unique       bool
+	Id          string
+	Name        string
+	Description string
+	Reward      string // create a new copy and place it in the player inventory
+	Type        QuestType
+	Target      string
+	Count       int
+	Progress    int
+	Completed   bool
+	Unique      bool
 }
 
 type Object struct {
@@ -116,6 +117,7 @@ type Group struct {
 type Behaviour string
 type Stat string
 type Category string
+type QuestType string
 
 const (
 	Weapon      Category = "Weapon"
@@ -138,6 +140,11 @@ const (
 	Defense Stat = "Defense"
 	Speed   Stat = "Speed"
 	Luck    Stat = "Luck"
+)
+
+const (
+	Fetch QuestType = "fetch"
+	Kill  QuestType = "kill"
 )
 
 //instead of a chat struct, a broadcast method so that

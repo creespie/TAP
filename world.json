@@ -153,7 +153,7 @@
       "hp": 50,
       "dialogs": [ "Stay safe, traveler.", "The roads south are dangerous at night.", "Goblins have been seen in the forest." ],
       "actions": [],
-      "quests": []
+      "quest": ""
     },
     "npc.baker": {
       "name": "Baker",
@@ -162,7 +162,7 @@
       "hp": 30,
       "dialogs": [ "Welcome to my bakery!", "Bread is best eaten warm." ],
       "actions": [],
-      "quests": []
+      "quest": ""
     },
     "npc.merchant": {
       "name": "Merchant",
@@ -171,7 +171,7 @@
       "hp": 30,
       "dialogs": [ "Fine goods for fine folk!", "I could use some healing herbs from the meadow." ],
       "actions": [],
-      "quests": [ "q.herbs" ]
+      "quest": "q.herbs"
     },
     "npc.blacksmith": {
       "name": "Blacksmith",
@@ -180,7 +180,7 @@
       "hp": 60,
       "dialogs": [ "Mind the sparks.", "A red goblin stole my best ore." ],
       "actions": [],
-      "quests": [ "q.red_goblin" ]
+      "quest": "q.red_goblin"
     },
     "npc.goblin_green": {
       "name": "Green Goblin",
@@ -192,7 +192,7 @@
         { "damage": 3, "sentence": "The Green Goblin scratches you." },
         { "damage": 5, "sentence": "The Green Goblin bites you!" }
       ],
-      "quests": []
+      "quest": ""
     },
     "npc.goblin_red": {
       "name": "Red Goblin",
@@ -209,23 +209,21 @@
   },
 
   "quests": {
-    "q.herbs": {
-      "name": "Herbs for the Merchant",
-      "description": "The merchant needs healing herbs from the meadow.",
-      "instructions": [ "Bring the Healing Herbs to the Merchant." ],
-      "reward": "item.leather_armor",
-      "unique": true
+   "q.herbs": {
+        "name": "Herbs for the Merchant",
+        "description": "Bring the Healing Herbs to the Merchant.",
+        "type": "fetch",
+        "target": "item.herbs",
+        "count": 1,
+        "reward": "item.leather_armor"
     },
     "q.red_goblin": {
-      "name": "The Stolen Ore",
-      "description": "A red goblin stole the blacksmith's best ore.",
-      "instructions": [
-        "Find the Red Goblin in the cave east of the old road.",
-        "Defeat the Red Goblin.",
-        "Return to the Blacksmith."
-      ],
-      "reward": "item.sword",
-      "unique": true
+        "name": "The Stolen Ore",
+        "description": "Defeat the Red Goblin in the cave east of the old road, then return to the Blacksmith.",
+        "type": "kill",
+        "target": "npc.goblin_red",
+        "count": 1,
+        "reward": "item.sword"
     }
   }
 }

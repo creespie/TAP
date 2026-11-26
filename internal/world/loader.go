@@ -46,7 +46,7 @@ type fileNpc struct {
 	Hp          int          `json:"hp"`
 	Dialogs     []string     `json:"dialogs"`
 	Actions     []fileAction `json:"actions"`
-	Quests      []string     `json:"quests"` // quest ids given by this npc
+	Quest       string       `json:"quest"` // id of the quest given by this npc, "" if none
 }
 
 type fileAction struct {
@@ -55,11 +55,13 @@ type fileAction struct {
 }
 
 type fileQst struct {
-	Name         string   `json:"name"`
-	Description  string   `json:"description"`
-	Instructions []string `json:"instructions"` // one instruction per step
-	Reward       string   `json:"reward"`       // item id, optional
-	Unique       bool     `json:"unique"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Type        string `json:"type"`   // "fetch" or "kill"
+	Target      string `json:"target"` // item id (fetch) or npc id (kill)
+	Count       int    `json:"count"`  // how many items / kills are needed
+	Reward      string `json:"reward"` // item id, optional
+	Unique      bool   `json:"unique"`
 }
 
 var validCategories = map[Category]bool{
@@ -69,6 +71,10 @@ var validCategories = map[Category]bool{
 
 var validBehaviours = map[Behaviour]bool{
 	Aggressive: true, QuestGiver: true, Passive: true,
+}
+
+var validQuestTypes = map[QuestType]bool{
+	Fetch: true, Kill: true,
 }
 
 // Load reads the JSON world file at path, validates it and returns the
@@ -120,8 +126,23 @@ func validate(fw *fileWorld) []string {
 		if q.Name == "" {
 			add("quest %q: missing name", id)
 		}
-		if len(q.Instructions) == 0 {
-			add("quest %q: needs at least one instruction", id)
+		if !validQuestTypes[QuestType(q.Type)] {
+			add("quest %q: unknown type %q (want %q or %q)", id, q.Type, Fetch, Kill)
+		}
+		if q.Count < 1 {
+			add("quest %q: count must be >= 1", id)
+		}
+		switch QuestType(q.Type) {
+		case Fetch:
+			if _, ok := fw.Items[q.Target]; !ok {
+				add("quest %q: target item %q does not exist", id, q.Target)
+			}
+		case Kill:
+			if n, ok := fw.Npcs[q.Target]; !ok {
+				add("quest %q: target npc %q does not exist", id, q.Target)
+			} else if Behaviour(n.Behaviour) != Aggressive {
+				add("quest %q: target npc %q is not Aggressive, it cannot be killed", id, q.Target)
+			}
 		}
 		if q.Reward != "" {
 			if _, ok := fw.Items[q.Reward]; !ok {
@@ -141,10 +162,16 @@ func validate(fw *fileWorld) []string {
 		if n.Hp <= 0 {
 			add("npc %q: hp must be > 0", id)
 		}
-		for _, qid := range n.Quests {
-			if _, ok := fw.Quests[qid]; !ok {
-				add("npc %q: quest %q does not exist", id, qid)
+		if n.Quest != "" {
+			if _, ok := fw.Quests[n.Quest]; !ok {
+				add("npc %q: quest %q does not exist", id, n.Quest)
 			}
+		}
+		if Behaviour(n.Behaviour) == QuestGiver && n.Quest == "" {
+			add("npc %q: QuestGiver must have a quest", id)
+		}
+		if Behaviour(n.Behaviour) != QuestGiver && n.Quest != "" {
+			add("npc %q: only a QuestGiver can give a quest", id)
 		}
 	}
 
@@ -225,22 +252,16 @@ func build(fw *fileWorld) *World {
 	}
 
 	for id, q := range fw.Quests {
-		quest := &Quest{
-			Id:           id,
-			Name:         q.Name,
-			Description:  q.Description,
-			CompleteStep: len(q.Instructions),
-			Instruction:  make(map[int]string, len(q.Instructions)),
-			Progression:  make(map[int]*Player),
-			Unique:       q.Unique,
+		w.Quests[id] = &Quest{
+			Id:          id,
+			Name:        q.Name,
+			Description: q.Description,
+			Type:        QuestType(q.Type),
+			Target:      q.Target,
+			Count:       q.Count,
+			Reward:      q.Reward,
+			Unique:      q.Unique,
 		}
-		for i, s := range q.Instructions {
-			quest.Instruction[i] = s
-		}
-		if q.Reward != "" {
-			quest.Reward = *w.Items[q.Reward]
-		}
-		w.Quests[id] = quest
 	}
 
 	for id, n := range fw.Npcs {
@@ -253,16 +274,13 @@ func build(fw *fileWorld) *World {
 			Behaviour:   Behaviour(n.Behaviour),
 			Dialogs:     make(map[int]string, len(n.Dialogs)),
 			Action:      make(map[int]*Action, len(n.Actions)),
-			Quests:      make(map[int]*Quest, len(n.Quests)),
+			Quest:       w.Quests[n.Quest],
 		}
 		for i, d := range n.Dialogs {
 			npc.Dialogs[i] = d
 		}
 		for i, a := range n.Actions {
 			npc.Action[i] = &Action{Damage: a.Damage, Sentence: a.Sentence}
-		}
-		for i, qid := range n.Quests {
-			npc.Quests[i] = w.Quests[qid]
 		}
 		w.Npcs[id] = npc
 	}

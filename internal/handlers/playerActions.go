@@ -70,6 +70,7 @@ func HandleLook(w *world.World, player *world.Player) {
 	data, err := json.Marshal(completeRoom)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "ERR 500 INTERNAL_ERROR", err)
+		Send(player, "ERR 500 INTERNAL_ERROR")
 		return
 	}
 	Send(player, "OK "+string(data))
@@ -113,11 +114,11 @@ func HandleDrop(w *world.World, player *world.Player, item string) {
 	}
 	room.Objects[foundItem.ItemNumber] = foundItem
 	delete(player.Inventory, foundItem.ItemNumber)
-	Send(player, "OK taken="+foundItem.Id)
+	Send(player, "OK dropped="+foundItem.Id)
 }
 
 func HandleInventory(w *world.World, player *world.Player) {
-	itemz := make([]string, len(player.Inventory))
+	itemz := make([]string, 0, len(player.Inventory))
 	for _, item := range player.Inventory {
 		itemz = append(itemz, item.Id)
 	}
@@ -139,7 +140,7 @@ func HandleTalk(w *world.World, player *world.Player, npcName string) {
 		return
 	}
 	if len(npc.Dialogs) == 0 {
-		Send(player, npc.Name+"has nothing to say")
+		Send(player, "OK "+npc.Name+" has nothing to say")
 		return
 	}
 	i := player.TalkIndex[npc.Id]
@@ -155,4 +156,49 @@ func HandleStatus(w *world.World, player *world.Player) {
 		return
 	}
 	Send(player, "OK "+string(data))
+}
+
+func HandleQuest(w *world.World, player *world.Player, npcName string) {
+	npc := FindNpc(player.CurrentRoom, npcName)
+	if npc == nil {
+		Send(player, "ERR 404 NPC_NOT_FOUND")
+		return
+	}
+	if npc.Quest == nil {
+		Send(player, "ERR 406 NO_QUEST_AVAILABLE")
+		return
+	}
+	def := npc.Quest
+	q, has := player.Quests[def.Id]
+
+	// first time: accept automatically
+	if !has {
+		q = *def
+		player.Quests[def.Id] = q
+		sendQuest(player, q, "active", fmt.Sprintf("%d/%d", questProgress(player, q), q.Count))
+		return
+	}
+
+	if q.Completed {
+		Send(player, "ERR 406 NO_QUEST_AVAILABLE")
+		return
+	}
+
+	have := questProgress(player, q)
+	if have < q.Count {
+		sendQuest(player, q, "active", fmt.Sprintf("%d/%d", have, q.Count))
+		return
+	}
+
+	// objective reached: deliver and reward
+	if q.Type == world.Fetch {
+		removeItems(player.Inventory, q.Target, q.Count)
+	}
+	if q.Reward != "" {
+		inst := w.NewItem(q.Reward)
+		player.Inventory[inst.ItemNumber] = inst
+	}
+	q.Completed = true
+	player.Quests[def.Id] = q
+	sendQuest(player, q, "completed", "")
 }

@@ -1,6 +1,9 @@
 package handlers
 
 import (
+	"encoding/json"
+	"fmt"
+	"os"
 	"strings"
 	"tap/internal/world"
 )
@@ -47,4 +50,59 @@ func FindNpc(room *world.Room, arg string) *world.Npc {
 		}
 	}
 	return nil
+}
+
+type questResponse struct {
+	QuestID     string `json:"quest_id"`
+	Description string `json:"description"`
+	Reward      string `json:"reward"`
+	Status      string `json:"status"`
+	Progress    string `json:"progress,omitempty"`
+}
+
+func sendQuest(player *world.Player, q world.Quest, status string, progress string) {
+	resp := questResponse{
+		QuestID:     q.Id,
+		Description: q.Description,
+		Reward:      q.Reward,
+		Status:      status,
+		Progress:    progress,
+	}
+	data, err := json.Marshal(resp)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "quest: marshal:", err)
+		Send(player, "ERR 500 INTERNAL_ERROR")
+		return
+	}
+	Send(player, "OK "+string(data))
+}
+
+// questProgress returns how far the player is: items owned (fetch) or kills (kill).
+func questProgress(player *world.Player, q world.Quest) int {
+	if q.Type == world.Fetch {
+		return countItems(player.Inventory, q.Target)
+	}
+	return q.Progress
+}
+
+func countItems(inv map[int]*world.Object, typeID string) int {
+	n := 0
+	for _, obj := range inv {
+		if obj.Id == typeID {
+			n++
+		}
+	}
+	return n
+}
+
+func removeItems(inv map[int]*world.Object, typeID string, n int) {
+	for num, obj := range inv {
+		if n == 0 {
+			return
+		}
+		if obj.Id == typeID {
+			delete(inv, num)
+			n--
+		}
+	}
 }
