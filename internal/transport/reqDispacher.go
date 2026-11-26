@@ -9,7 +9,8 @@ import (
 )
 
 func DispatchRequest(conn net.Conn, line string, w *world.World) {
-
+	w.Mu.Lock()
+	defer w.Mu.Unlock()
 	fields := strings.Fields(line)
 
 	if len(fields) == 0 {
@@ -37,8 +38,8 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 			fmt.Fprintln(conn, "ERR 400 BAD_REQUEST")
 			return
 		}
-
-		//handleQuit(conn, w)DA FAREE diocnae
+		player := findPlayer(w, conn)
+		handlers.handleQuit(w, player)
 
 	case "LOOK":
 
@@ -46,8 +47,10 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 			fmt.Fprintln(conn, "ERR 400 BAD_REQUEST")
 			return
 		}
-
-		//handleLook(conn, w) DA FAREE diocnae
+		player := findPlayer(w, conn)
+		handlers.RemovePlayer(w, player)
+		fmt.Fprintln(player.Connection, "OK BYE")
+		player.Connection.Close()
 
 	case "MOVE":
 
@@ -227,4 +230,15 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 	default:
 		fmt.Fprintln(conn, "ERR 400 UNKNOWN_COMMAND")
 	}
+}
+
+// findPlayer returns the player using conn, or nil if conn has not
+// sent a successful CONNECT yet. The caller must hold w.Mu.
+func findPlayer(w *world.World, conn net.Conn) *world.Player {
+	for _, player := range w.Players {
+		if player.Connection == conn {
+			return player
+		}
+	}
+	return nil
 }

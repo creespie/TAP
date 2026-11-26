@@ -32,12 +32,8 @@ func HandleConnect(conn net.Conn, name string, w *world.World) {
 		return
 	}
 
-	//protegiamo il mondo con il lock eprche altri possono usarlo allo stesos tmepo
-	w.Mu.Lock()
-
 	//check se lo username siste gia
 	if _, exists := w.Players[name]; exists {
-		w.Mu.Unlock()
 		fmt.Fprintln(conn, "ERR 201 NAME_IN_USE")
 		return
 	}
@@ -65,22 +61,24 @@ func HandleConnect(conn net.Conn, name string, w *world.World) {
 	w.Players[name] = player
 	w.StartRoom.Players[name] = player
 
-	w.Mu.Unlock()
-
 	//risposta al client
 	if _, err := fmt.Fprintln(conn, "OK connected"); err != nil {
-
-		w.Mu.Lock()
-
 		if w.Players[name] == player {
 			delete(w.Players, name)
 		}
-
 		if w.StartRoom.Players[name] == player {
 			delete(w.StartRoom.Players, name)
 		}
-
-		w.Mu.Unlock()
 		return
 	}
 }
+
+//general function to remove every instance of a player in the world
+func RemovePlayer(w *world.World, player *world.Player) {
+	delete(w.Players, p.Name)
+	delete(p.CurrentRoom.Players, p.Name)
+	if p.Group != nil {
+		delete(p.Group.Players, p.Name)
+	}
+}
+

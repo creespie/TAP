@@ -107,7 +107,7 @@ type Stats struct {
 
 type Group struct {
 	Id      int
-	Players map[int]*Player
+	Players map[string]*Player
 }
 
 type Behaviour string
