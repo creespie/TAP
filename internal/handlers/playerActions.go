@@ -146,3 +146,13 @@ func HandleTalk(w *world.World, player *world.Player, npcName string){
 	Send(player, "OK " + npc.Dialogs[i])
 	player.TalkIndex[npc.Id] = (i + 1) % len(npc.Dialogs)
 }
+
+func HandleStatus(w *world.World, player *world.Player){
+	data, err := json.Marshal(player.Stats)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "inventory: marshal:", err)
+		Send(player, "ERR 500 INTERNAL_ERROR")
+		return
+	}
+	Send(player, "OK "+string(data))
+}

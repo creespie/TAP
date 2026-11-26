@@ -102,6 +102,7 @@ type Action struct {
 
 type Stats struct {
 	Health  int
+	MaxHealth int
 	Speed   int
 	Defense int
 	Luck    int

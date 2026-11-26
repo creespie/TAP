@@ -45,6 +45,7 @@ func HandleConnect(conn net.Conn, name string, w *world.World) {
 
 		Stats: world.Stats{
 			Health:  world.PlayerStartingHealth, //LUDO! messo tutto nelle costanti DENTRO gameConstats cosi le possiamo editare visto che non abbiamo anxoria appurato come sarail gioco
+			MaxHealth: world.PlayerStartingHealth,
 			Speed:   world.PlayerStartingSpeed,
 			Defense: world.PlayerStartingDefense,
 			Luck:    world.PlayerStartingLuck,

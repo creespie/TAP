@@ -204,7 +204,7 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 				return
 			}
 
-			//handleStatus(conn, w) DA FAREE diocane
+			handlers.HandleStatus(w, player)
 
 		case "QUEST":
 
