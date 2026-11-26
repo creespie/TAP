@@ -44,11 +44,11 @@ func HandleConnect(conn net.Conn, name string, w *world.World) {
 		Name:       name,
 
 		Stats: world.Stats{
-			Health:  world.PlayerStartingHealth, //LUDO! messo tutto nelle costanti DENTRO gameConstats cosi le possiamo editare visto che non abbiamo anxoria appurato come sarail gioco
+			Health:    world.PlayerStartingHealth, //LUDO! messo tutto nelle costanti DENTRO gameConstats cosi le possiamo editare visto che non abbiamo anxoria appurato come sarail gioco
 			MaxHealth: world.PlayerStartingHealth,
-			Speed:   world.PlayerStartingSpeed,
-			Defense: world.PlayerStartingDefense,
-			Luck:    world.PlayerStartingLuck,
+			Speed:     world.PlayerStartingSpeed,
+			Defense:   world.PlayerStartingDefense,
+			Luck:      world.PlayerStartingLuck,
 		},
 
 		Inventory: make(map[int]*world.Object),
@@ -57,7 +57,7 @@ func HandleConnect(conn net.Conn, name string, w *world.World) {
 
 		CurrentRoom: w.StartRoom,
 		Outbox:      make(chan string, world.OutboxSize),
-		TalkIndex: make(map[string]int),
+		TalkIndex:   make(map[string]int),
 	}
 	go func(p *world.Player) {
 		for line := range p.Outbox {

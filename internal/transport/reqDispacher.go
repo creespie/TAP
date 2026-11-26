@@ -213,8 +213,8 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 				return
 			}
 
-			//npcName := strings.Join(args, " ")
-			//handleQuest(conn, npcName, w) DA FAREE diocane
+			npcName := strings.Join(args, " ")
+			handlers.HandleQuest(w, player, npcName)
 
 		case "QUESTS":
 

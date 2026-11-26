@@ -84,7 +84,7 @@ type Player struct {
 	Invites     map[string]*Group
 	CurrentRoom *Room
 	Outbox      chan string
-	TalkIndex map[string]int
+	TalkIndex   map[string]int
 }
 
 type Equipment struct {
@@ -101,11 +101,11 @@ type Action struct {
 }
 
 type Stats struct {
-	Health  int
+	Health    int
 	MaxHealth int
-	Speed   int
-	Defense int
-	Luck    int
+	Speed     int
+	Defense   int
+	Luck      int
 }
 
 type Group struct {

@@ -37,7 +37,7 @@ func FindItem(objects map[int]*world.Object, arg string) *world.Object {
 
 func FindNpc(room *world.Room, arg string) *world.Npc {
 	for _, npc := range room.Npc {
-		if !npc.IsAlive{
+		if !npc.IsAlive {
 			continue
 		}
 		if strings.EqualFold(npc.Id, arg) ||

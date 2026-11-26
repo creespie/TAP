@@ -132,22 +132,22 @@ func HandleInventory(w *world.World, player *world.Player) {
 	Send(player, "OK "+string(data))
 }
 
-func HandleTalk(w *world.World, player *world.Player, npcName string){
+func HandleTalk(w *world.World, player *world.Player, npcName string) {
 	npc := FindNpc(player.CurrentRoom, npcName)
-	if npc == nil{
+	if npc == nil {
 		Send(player, "ERR 404 NPC_NOT_FOUND")
 		return
 	}
-	if len(npc.Dialogs) == 0{
-		Send(player, npc.Name + "has nothing to say")
+	if len(npc.Dialogs) == 0 {
+		Send(player, npc.Name+"has nothing to say")
 		return
 	}
 	i := player.TalkIndex[npc.Id]
-	Send(player, "OK " + npc.Dialogs[i])
+	Send(player, "OK "+npc.Dialogs[i])
 	player.TalkIndex[npc.Id] = (i + 1) % len(npc.Dialogs)
 }
 
-func HandleStatus(w *world.World, player *world.Player){
+func HandleStatus(w *world.World, player *world.Player) {
 	data, err := json.Marshal(player.Stats)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "inventory: marshal:", err)
