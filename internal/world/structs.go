@@ -81,7 +81,7 @@ type Player struct {
 	Equipment   Equipment
 	Quests      map[string]Quest
 	Group       *Group
-	Invites     map[int]*Group
+	Invites     map[string]*Group
 	CurrentRoom *Room
 	Outbox      chan string
 }

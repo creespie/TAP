@@ -114,7 +114,7 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 					return
 				}
 
-				//handleGroupCreate(conn, w) DA FAREE diocnae
+				handlers.HandleGroupCreate(w, player)
 
 			case "INVITE":
 
@@ -123,16 +123,16 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 					return
 				}
 
-				//handleGroupInvite(conn, groupArgs[0], w) DA FAREE diocnae
+				handlers.HandleGroupInvite(w, groupArgs[0], player)
 
 			case "JOIN":
 
-				if len(groupArgs) != 0 {
+				if len(groupArgs) != 1 {
 					handlers.Send(player, "ERR 400 BAD_REQUEST")
 					return
 				}
 
-				//handleGroupJoin(conn, w) DA FAREE diocnae
+				handlers.HandleGroupJoin(w, groupArgs[0], player)
 
 			case "LEAVE":
 
@@ -141,7 +141,7 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 					return
 				}
 
-				//handleGroupLeave(conn, w) DA FAREE diocane
+				handlers.HandleGroupLeave(w, player)
 
 			default:
 				handlers.Send(player, "ERR 400 BAD_REQUEST")
