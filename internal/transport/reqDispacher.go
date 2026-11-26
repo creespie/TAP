@@ -60,8 +60,8 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 			fmt.Fprintln(conn, "ERR 400 BAD_REQUEST")
 			return
 		}
-
-		//handleMove(conn, args[0], w)DA FAREE diocnae
+		player := findPlayer(w, conn)
+		handlers.HandleMove(w, args[0], player)
 
 	case "CHAT":
 

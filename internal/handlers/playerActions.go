@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
 
 	"tap/internal/world"
 )
@@ -70,4 +71,16 @@ func HandleLook(w *world.World, player *world.Player) {
 		return
 	}
 	fmt.Fprintln(player.Connection, "OK "+string(data))
+}
+
+//missing flag in combat
+//and missing respawn mechanic
+func HandleMove(w *world.World, dir string, player *world.Player) {
+	next, ok := player.CurrentRoom.AccessibleRooms[strings.ToLower(dir)]
+	if !ok {
+		fmt.Fprintln(player.Connection, "ERR 301 NO_EXIT")
+		return
+	}
+	MovePlayer(player, next)
+	fmt.Fprintln(player.Connection, "OK room="+next.Id)
 }

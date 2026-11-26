@@ -72,13 +72,3 @@ func HandleConnect(conn net.Conn, name string, w *world.World) {
 		return
 	}
 }
-
-//general function to remove every instance of a player in the world
-func RemovePlayer(w *world.World, player *world.Player) {
-	delete(w.Players, p.Name)
-	delete(p.CurrentRoom.Players, p.Name)
-	if p.Group != nil {
-		delete(p.Group.Players, p.Name)
-	}
-}
-
