@@ -51,6 +51,7 @@ func HandleGroupJoin(w *world.World, groupId string, player *world.Player) {
 		return
 	}
 	player.Group = group
+	group.Players[player.Name] = player
 	Send(player, "OK group=" + strconv.Itoa(group.Id))
 	delete(player.Invites, groupId)
 }
