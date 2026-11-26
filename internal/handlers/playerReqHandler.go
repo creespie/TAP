@@ -56,6 +56,7 @@ func HandleConnect(conn net.Conn, name string, w *world.World) {
 
 		CurrentRoom: w.StartRoom,
 		Outbox:      make(chan string, world.OutboxSize),
+		TalkIndex: make(map[string]int),
 	}
 	go func(p *world.Player) {
 		for line := range p.Outbox {

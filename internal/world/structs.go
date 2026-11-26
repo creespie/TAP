@@ -84,6 +84,7 @@ type Player struct {
 	Invites     map[string]*Group
 	CurrentRoom *Room
 	Outbox      chan string
+	TalkIndex map[string]int
 }
 
 type Equipment struct {

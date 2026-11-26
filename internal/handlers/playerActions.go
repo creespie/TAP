@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 	"sort"
-	"strings"
 	"strconv"
+	"strings"
 
 	"tap/internal/world"
 )
@@ -75,8 +75,8 @@ func HandleLook(w *world.World, player *world.Player) {
 	Send(player, "OK "+string(data))
 }
 
-//missing flag in combat
-//and missing respawn mechanic
+// missing flag in combat
+// and missing respawn mechanic
 func HandleMove(w *world.World, dir string, player *world.Player) {
 	next, ok := player.CurrentRoom.AccessibleRooms[strings.ToLower(dir)]
 	if !ok {
@@ -87,32 +87,62 @@ func HandleMove(w *world.World, dir string, player *world.Player) {
 	Send(player, "OK room="+next.Id)
 }
 
-
-func HandleWho(w *world.World, player *world.Player){
+func HandleWho(w *world.World, player *world.Player) {
 	count := len(w.Players)
-	Send(player, "OK players=" + strconv.Itoa(count))
+	Send(player, "OK players="+strconv.Itoa(count))
 }
 
-func HandleTake(w *world.World, player *world.Player, item string){
+func HandleTake(w *world.World, player *world.Player, item string) {
 	room := player.CurrentRoom
 	foundItem := FindItem(room.Objects, item)
-	if foundItem == nil{
+	if foundItem == nil {
 		Send(player, "ERR 404 ITEM_NOT_FOUND")
 		return
 	}
 	player.Inventory[foundItem.ItemNumber] = foundItem
 	delete(room.Objects, foundItem.ItemNumber)
-	Send(player, "OK taken="+ foundItem.Id)
+	Send(player, "OK taken="+foundItem.Id)
 }
 
-func HandleDrop(w *world.World, player *world.Player, item string){
+func HandleDrop(w *world.World, player *world.Player, item string) {
 	room := player.CurrentRoom
 	foundItem := FindItem(player.Inventory, item)
-	if foundItem == nil{
+	if foundItem == nil {
 		Send(player, "ERR 404 ITEM_NOT_IN_INVENTORY")
 		return
 	}
 	room.Objects[foundItem.ItemNumber] = foundItem
 	delete(player.Inventory, foundItem.ItemNumber)
-	Send(player, "OK taken="+ foundItem.Id)
+	Send(player, "OK taken="+foundItem.Id)
+}
+
+func HandleInventory(w *world.World, player *world.Player) {
+	itemz := make([]string, len(player.Inventory))
+	for _, item := range player.Inventory {
+		itemz = append(itemz, item.Id)
+	}
+	sort.Strings(itemz)
+
+	data, err := json.Marshal(itemz)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "inventory: marshal:", err)
+		Send(player, "ERR 500 INTERNAL_ERROR")
+		return
+	}
+	Send(player, "OK "+string(data))
+}
+
+func HandleTalk(w *world.World, player *world.Player, npcName string){
+	npc := FindNpc(player.CurrentRoom, npcName)
+	if npc == nil{
+		Send(player, "ERR 404 NPC_NOT_FOUND")
+		return
+	}
+	if len(npc.Dialogs) == 0{
+		Send(player, npc.Name + "has nothing to say")
+		return
+	}
+	i := player.TalkIndex[npc.Id]
+	Send(player, "OK " + npc.Dialogs[i])
+	player.TalkIndex[npc.Id] = (i + 1) % len(npc.Dialogs)
 }

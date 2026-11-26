@@ -174,7 +174,7 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 				return
 			}
 
-			//handleInventory(conn, w) DA FAREE diocane
+			handlers.HandleInventory(w, player)
 
 		case "TALK":
 
@@ -183,8 +183,8 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 				return
 			}
 
-			//npcName := strings.Join(args, " ")
-			//handleTalk(conn, npcName, w) DA FAREE diocane
+			npcName := strings.Join(args, " ")
+			handlers.HandleTalk(w, player, npcName)
 
 		case "ATTACK":
 
