@@ -31,3 +31,11 @@ const (
 	MaxInventoryItems = 20 // Design choice
 	MaxGroupPlayers   = 4  // Design choice
 )
+
+// ==================================
+// GAME RULES
+// ==================================
+
+const (
+	OutboxSize = 64 //Design choice
+)

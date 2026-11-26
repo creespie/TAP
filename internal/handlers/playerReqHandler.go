@@ -55,20 +55,19 @@ func HandleConnect(conn net.Conn, name string, w *world.World) {
 		Invites:   make(map[int]*world.Group),
 
 		CurrentRoom: w.StartRoom,
+		Outbox:      make(chan string, world.OutboxSize),
 	}
-
+	go func(p *world.Player) {
+		for line := range p.Outbox {
+			if _, err := fmt.Fprintln(p.Connection, line); err != nil {
+				p.Connection.Close()
+			}
+		}
+	}(player)
 	//registmo il player nel modno
 	w.Players[name] = player
 	w.StartRoom.Players[name] = player
 
 	//risposta al client
-	if _, err := fmt.Fprintln(conn, "OK connected"); err != nil {
-		if w.Players[name] == player {
-			delete(w.Players, name)
-		}
-		if w.StartRoom.Players[name] == player {
-			delete(w.StartRoom.Players, name)
-		}
-		return
-	}
+	Send(player, "OK connected")
 }

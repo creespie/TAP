@@ -83,6 +83,7 @@ type Player struct {
 	Group       *Group
 	Invites     map[int]*Group
 	CurrentRoom *Room
+	Outbox      chan string
 }
 
 type Equipment struct {

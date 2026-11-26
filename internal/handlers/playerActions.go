@@ -67,7 +67,7 @@ func HandleLook(w *world.World, player *world.Player) {
 	}
 	data, err := json.Marshal(completeRoom)
 	if err != nil {
-		fmt.Fprintln(player.Connection, "look: marshall", err)
+		fmt.Fprintln(player.Connection, "ERR 500 INTERNAL_ERROR", err)
 		return
 	}
 	fmt.Fprintln(player.Connection, "OK "+string(data))
