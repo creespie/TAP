@@ -204,17 +204,17 @@
         { "damage": 5, "sentence": "The Red Goblin swings a rusty club." },
         { "damage": 9, "sentence": "The Red Goblin throws a burning torch at you!" }
       ],
-      "quests": []
+      "quest": ""
     }
   },
 
   "quests": {
    "q.herbs": {
         "name": "Herbs for the Merchant",
-        "description": "Bring the Healing Herbs to the Merchant.",
+        "description": "Bring three Healing Herbs to the Merchant.",
         "type": "fetch",
         "target": "item.herbs",
-        "count": 1,
+        "count": 3,
         "reward": "item.leather_armor"
     },
     "q.red_goblin": {
