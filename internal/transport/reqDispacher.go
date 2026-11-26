@@ -39,7 +39,9 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 			return
 		}
 		player := findPlayer(w, conn)
-		handlers.handleQuit(w, player)
+		handlers.RemovePlayer(w, player)
+		fmt.Fprintln(player.Connection, "OK BYE")
+		player.Connection.Close()
 
 	case "LOOK":
 
@@ -48,7 +50,7 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 			return
 		}
 		player := findPlayer(w, conn)
-		handlers.RemovePlayer(w, player)
+		handlers.HandleLook(w, player)
 		fmt.Fprintln(player.Connection, "OK BYE")
 		player.Connection.Close()
 
