@@ -63,6 +63,7 @@ func HandleConnect(conn net.Conn, name string, w *world.World) {
 				p.Connection.Close()
 			}
 		}
+		p.Connection.Close()
 	}(player)
 	//registmo il player nel modno
 	w.Players[name] = player

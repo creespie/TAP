@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"tap/internal/handlers"
 	"tap/internal/transport"
 	"tap/internal/world"
 	"unicode/utf8"
@@ -33,7 +34,15 @@ func handleConnection(conn net.Conn, counter int, registry *transport.ConnRegist
 	defer registry.Remove(counter)
 	defer fmt.Printf("disconnected client number %d\n", counter)
 	defer conn.Close()
-
+	//remove player from world on ctrl c
+	defer func() {
+		w.Mu.Lock()
+		defer w.Mu.Unlock()
+		if p := transport.FindPlayer(w, conn); p != nil {
+			handlers.RemovePlayer(w, p)
+			close(p.Outbox)
+		}
+	}()
 	// Initial greeting
 	fmt.Fprintln(conn, "OK hello proto=1")
 

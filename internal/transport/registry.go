@@ -3,6 +3,8 @@ package transport
 import (
 	"net"
 	"sync"
+
+	"tap/internal/world"
 )
 
 type ConnRegistry struct {
@@ -43,4 +45,15 @@ func (r *ConnRegistry) CloseAll() {
 	}
 	r.mu.Unlock()
 	defer r.wg.Wait()
+}
+
+// FindPlayer returns the player using conn, or nil if conn has not
+// sent a successful CONNECT yet. The caller must hold w.Mu.
+func FindPlayer(w *world.World, conn net.Conn) *world.Player {
+	for _, player := range w.Players {
+		if player.Connection == conn {
+			return player
+		}
+	}
+	return nil
 }

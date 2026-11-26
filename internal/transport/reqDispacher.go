@@ -23,11 +23,14 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 		if len(args) != 1 {
 			fmt.Fprintln(conn, "ERR 400 BAD_REQUEST")
 			return
+		} else if FindPlayer(w, conn) != nil {
+			fmt.Fprintln(conn, "ERR 409 ALREADY_CONNECTED")
+			return
 		}
 
 		handlers.HandleConnect(conn, args[0], w)
 	} else {
-		player := findPlayer(w, conn)
+		player := FindPlayer(w, conn)
 		if player == nil {
 			fmt.Fprintln(conn, "ERR 403 NOT_AUTHENTICATED")
 			return
@@ -36,17 +39,17 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 		case "QUIT":
 
 			if len(args) != 0 {
-				fmt.Fprintln(conn, "ERR 400 BAD_REQUEST")
+				handlers.Send(player, "ERR 400 BAD_REQUEST")
 				return
 			}
 			handlers.RemovePlayer(w, player)
-			fmt.Fprintln(player.Connection, "OK BYE")
-			player.Connection.Close()
+			handlers.Send(player, "OK bye")
+			close(player.Outbox)
 
 		case "LOOK":
 
 			if len(args) != 0 {
-				fmt.Fprintln(conn, "ERR 400 BAD_REQUEST")
+				handlers.Send(player, "ERR 400 BAD_REQUEST")
 				return
 			}
 			handlers.HandleLook(w, player)
@@ -54,7 +57,7 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 		case "MOVE":
 
 			if len(args) != 1 {
-				fmt.Fprintln(conn, "ERR 400 BAD_REQUEST")
+				handlers.Send(player, "ERR 400 BAD_REQUEST")
 				return
 			}
 			handlers.HandleMove(w, args[0], player)
@@ -62,7 +65,7 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 		case "CHAT":
 
 			if len(args) < 2 {
-				fmt.Fprintln(conn, "ERR 400 BAD_REQUEST")
+				handlers.Send(player, "ERR 400 BAD_REQUEST")
 				return
 			}
 
@@ -80,13 +83,13 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 				handlers.HandleChatGroup(player, message, w)
 
 			default:
-				fmt.Fprintln(conn, "ERR 400 BAD_REQUEST")
+				handlers.Send(player, "ERR 400 BAD_REQUEST")
 			}
 
 		case "WHO":
 
 			if len(args) != 0 {
-				fmt.Fprintln(conn, "ERR 400 BAD_REQUEST")
+				handlers.Send(player, "ERR 400 BAD_REQUEST")
 				return
 			}
 
@@ -95,7 +98,7 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 		case "GROUP":
 
 			if len(args) < 1 {
-				fmt.Fprintln(conn, "ERR 400 BAD_REQUEST")
+				handlers.Send(player, "ERR 400 BAD_REQUEST")
 				return
 			}
 
@@ -107,7 +110,7 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 			case "CREATE":
 
 				if len(groupArgs) != 0 {
-					fmt.Fprintln(conn, "ERR 400 BAD_REQUEST")
+					handlers.Send(player, "ERR 400 BAD_REQUEST")
 					return
 				}
 
@@ -116,7 +119,7 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 			case "INVITE":
 
 				if len(groupArgs) != 1 {
-					fmt.Fprintln(conn, "ERR 400 BAD_REQUEST")
+					handlers.Send(player, "ERR 400 BAD_REQUEST")
 					return
 				}
 
@@ -125,7 +128,7 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 			case "JOIN":
 
 				if len(groupArgs) != 0 {
-					fmt.Fprintln(conn, "ERR 400 BAD_REQUEST")
+					handlers.Send(player, "ERR 400 BAD_REQUEST")
 					return
 				}
 
@@ -134,20 +137,20 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 			case "LEAVE":
 
 				if len(groupArgs) != 0 {
-					fmt.Fprintln(conn, "ERR 400 BAD_REQUEST")
+					handlers.Send(player, "ERR 400 BAD_REQUEST")
 					return
 				}
 
 				//handleGroupLeave(conn, w) DA FAREE diocane
 
 			default:
-				fmt.Fprintln(conn, "ERR 400 BAD_REQUEST")
+				handlers.Send(player, "ERR 400 BAD_REQUEST")
 			}
 
 		case "TAKE":
 
 			if len(args) == 0 {
-				fmt.Fprintln(conn, "ERR 400 BAD_REQUEST")
+				handlers.Send(player, "ERR 400 BAD_REQUEST")
 				return
 			}
 
@@ -157,7 +160,7 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 		case "DROP":
 
 			if len(args) == 0 {
-				fmt.Fprintln(conn, "ERR 400 BAD_REQUEST")
+				handlers.Send(player, "ERR 400 BAD_REQUEST")
 				return
 			}
 
@@ -167,7 +170,7 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 		case "INVENTORY":
 
 			if len(args) != 0 {
-				fmt.Fprintln(conn, "ERR 400 BAD_REQUEST")
+				handlers.Send(player, "ERR 400 BAD_REQUEST")
 				return
 			}
 
@@ -176,7 +179,7 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 		case "TALK":
 
 			if len(args) == 0 {
-				fmt.Fprintln(conn, "ERR 400 BAD_REQUEST")
+				handlers.Send(player, "ERR 400 BAD_REQUEST")
 				return
 			}
 
@@ -186,7 +189,7 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 		case "ATTACK":
 
 			if len(args) == 0 {
-				fmt.Fprintln(conn, "ERR 400 BAD_REQUEST")
+				handlers.Send(player, "ERR 400 BAD_REQUEST")
 				return
 			}
 
@@ -197,7 +200,7 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 		case "STATUS":
 
 			if len(args) != 0 {
-				fmt.Fprintln(conn, "ERR 400 BAD_REQUEST")
+				handlers.Send(player, "ERR 400 BAD_REQUEST")
 				return
 			}
 
@@ -206,7 +209,7 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 		case "QUEST":
 
 			if len(args) == 0 {
-				fmt.Fprintln(conn, "ERR 400 BAD_REQUEST")
+				handlers.Send(player, "ERR 400 BAD_REQUEST")
 				return
 			}
 
@@ -216,7 +219,7 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 		case "QUESTS":
 
 			if len(args) != 0 {
-				fmt.Fprintln(conn, "ERR 400 BAD_REQUEST")
+				handlers.Send(player, "ERR 400 BAD_REQUEST")
 				return
 			}
 
@@ -224,18 +227,7 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 
 		//scoinsciuto il comando in questo caso , o pure ne impetiamo dei nostri.
 		default:
-			fmt.Fprintln(conn, "ERR 400 UNKNOWN_COMMAND")
+			handlers.Send(player, "ERR 400 UNKNOWN_COMMAND")
 		}
 	}
-}
-
-// findPlayer returns the player using conn, or nil if conn has not
-// sent a successful CONNECT yet. The caller must hold w.Mu.
-func findPlayer(w *world.World, conn net.Conn) *world.Player {
-	for _, player := range w.Players {
-		if player.Connection == conn {
-			return player
-		}
-	}
-	return nil
 }

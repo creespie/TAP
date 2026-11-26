@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"sort"
 	"strings"
 
@@ -67,10 +68,10 @@ func HandleLook(w *world.World, player *world.Player) {
 	}
 	data, err := json.Marshal(completeRoom)
 	if err != nil {
-		fmt.Fprintln(player.Connection, "ERR 500 INTERNAL_ERROR", err)
+		fmt.Fprintln(os.Stderr, "ERR 500 INTERNAL_ERROR", err)
 		return
 	}
-	fmt.Fprintln(player.Connection, "OK "+string(data))
+	Send(player, "OK "+string(data))
 }
 
 //missing flag in combat
@@ -78,9 +79,9 @@ func HandleLook(w *world.World, player *world.Player) {
 func HandleMove(w *world.World, dir string, player *world.Player) {
 	next, ok := player.CurrentRoom.AccessibleRooms[strings.ToLower(dir)]
 	if !ok {
-		fmt.Fprintln(player.Connection, "ERR 301 NO_EXIT")
+		Send(player, "ERR 301 NO_EXIT")
 		return
 	}
 	MovePlayer(player, next)
-	fmt.Fprintln(player.Connection, "OK room="+next.Id)
+	Send(player, "OK room="+next.Id)
 }
