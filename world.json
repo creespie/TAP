@@ -1,0 +1,231 @@
+{
+  "start_room": "loc.square",
+  "respawn_room": "loc.square",
+
+  "rooms": {
+    "loc.square": {
+      "name": "Village Square",
+      "description": "A cobblestone square with an old well in the middle. Paths lead in every direction.",
+      "width": 10,
+      "height": 10,
+      "exits": { "north": "loc.bakery", "east": "loc.market", "south": "loc.gate" },
+      "items": [],
+      "npcs": []
+    },
+    "loc.bakery": {
+      "name": "Village Bakery",
+      "description": "A warm bakery filled with the scent of fresh bread.",
+      "width": 6,
+      "height": 4,
+      "exits": { "south": "loc.square", "east": "loc.forge" },
+      "items": [ "item.bread" ],
+      "npcs": [ "npc.baker" ]
+    },
+    "loc.forge": {
+      "name": "Blacksmith's Forge",
+      "description": "Heat rolls off the anvil. Tools and half-finished blades hang on the walls.",
+      "width": 6,
+      "height": 6,
+      "exits": { "west": "loc.bakery", "south": "loc.market" },
+      "items": [ "item.dagger" ],
+      "npcs": [ "npc.blacksmith" ]
+    },
+    "loc.market": {
+      "name": "Market Street",
+      "description": "Colourful stalls line the street. A merchant waves at you.",
+      "width": 12,
+      "height": 4,
+      "exits": { "north": "loc.forge", "west": "loc.square" },
+      "items": [ "item.leather_cap" ],
+      "npcs": [ "npc.merchant" ]
+    },
+    "loc.gate": {
+      "name": "Village Gate",
+      "description": "A wooden gate marks the edge of the village. Beyond it, the wilds.",
+      "width": 8,
+      "height": 4,
+      "exits": { "north": "loc.square", "west": "loc.meadow", "south": "loc.road" },
+      "items": [],
+      "npcs": [ "npc.guard" ]
+    },
+    "loc.meadow": {
+      "name": "Sunny Meadow",
+      "description": "Tall grass sways in the wind. Healing herbs grow among the flowers.",
+      "width": 15,
+      "height": 15,
+      "exits": { "east": "loc.gate", "south": "loc.forest" },
+      "items": [ "item.herbs" ],
+      "npcs": []
+    },
+    "loc.forest": {
+      "name": "Dark Forest",
+      "description": "Twisted trees block out the sun. Something green moves between the trunks.",
+      "width": 15,
+      "height": 15,
+      "exits": { "north": "loc.meadow", "east": "loc.road" },
+      "items": [ "item.leather_boots" ],
+      "npcs": [ "npc.goblin_green" ]
+    },
+    "loc.road": {
+      "name": "Old Road",
+      "description": "A cracked road. To the east, the mouth of a cave gapes in the hillside.",
+      "width": 20,
+      "height": 3,
+      "exits": { "west": "loc.forest", "north": "loc.gate", "east": "loc.cave" },
+      "items": [],
+      "npcs": []
+    },
+    "loc.cave": {
+      "name": "Goblin Cave",
+      "description": "A damp cave that smells of smoke. Something glints among the bones in the corner.",
+      "width": 8,
+      "height": 8,
+      "exits": { "west": "loc.road" },
+      "items": [ "item.lucky_ring" ],
+      "npcs": [ "npc.goblin_red" ]
+    }
+  },
+
+  "items": {
+    "item.herbs": {
+      "name": "Healing Herbs",
+      "description": "A bundle of fragrant green herbs.",
+      "category": "Consumable",
+      "stat": 15,
+      "obtainable": true
+    },
+    "item.bread": {
+      "name": "Loaf of Bread",
+      "description": "Still warm from the oven.",
+      "category": "Consumable",
+      "stat": 10,
+      "obtainable": true
+    },
+    "item.dagger": {
+      "name": "Rusty Dagger",
+      "description": "Light and quick, if not very sharp.",
+      "category": "Weapon",
+      "stat": 4,
+      "obtainable": true
+    },
+    "item.sword": {
+      "name": "Iron Sword",
+      "description": "A sturdy blade forged in the village.",
+      "category": "Weapon",
+      "stat": 8,
+      "obtainable": false
+    },
+    "item.leather_cap": {
+      "name": "Leather Cap",
+      "description": "Better than nothing.",
+      "category": "Helmet",
+      "stat": 1,
+      "obtainable": true
+    },
+    "item.leather_armor": {
+      "name": "Leather Armor",
+      "description": "Light armor made of hardened leather.",
+      "category": "Chestplate",
+      "stat": 3,
+      "obtainable": false
+    },
+    "item.leather_boots": {
+      "name": "Leather Boots",
+      "description": "Soft boots for quiet steps.",
+      "category": "Boots",
+      "stat": 2,
+      "obtainable": true
+    },
+    "item.lucky_ring": {
+      "name": "Lucky Ring",
+      "description": "A small ring that seems to bend fortune your way.",
+      "category": "Ring",
+      "stat": 3,
+      "obtainable": true
+    }
+  },
+
+  "npcs": {
+    "npc.guard": {
+      "name": "Village Guard",
+      "description": "A stern-looking guard watching the road.",
+      "behaviour": "Passive",
+      "hp": 50,
+      "dialogs": [ "Stay safe, traveler.", "The roads south are dangerous at night.", "Goblins have been seen in the forest." ],
+      "actions": [],
+      "quests": []
+    },
+    "npc.baker": {
+      "name": "Baker",
+      "description": "A round, flour-covered man with a big smile.",
+      "behaviour": "Passive",
+      "hp": 30,
+      "dialogs": [ "Welcome to my bakery!", "Bread is best eaten warm." ],
+      "actions": [],
+      "quests": []
+    },
+    "npc.merchant": {
+      "name": "Merchant",
+      "description": "A sharp-eyed trader counting coins.",
+      "behaviour": "QuestGiver",
+      "hp": 30,
+      "dialogs": [ "Fine goods for fine folk!", "I could use some healing herbs from the meadow." ],
+      "actions": [],
+      "quests": [ "q.herbs" ]
+    },
+    "npc.blacksmith": {
+      "name": "Blacksmith",
+      "description": "A broad-shouldered woman hammering a glowing blade.",
+      "behaviour": "QuestGiver",
+      "hp": 60,
+      "dialogs": [ "Mind the sparks.", "A red goblin stole my best ore." ],
+      "actions": [],
+      "quests": [ "q.red_goblin" ]
+    },
+    "npc.goblin_green": {
+      "name": "Green Goblin",
+      "description": "A small green goblin with a nasty grin.",
+      "behaviour": "Aggressive",
+      "hp": 20,
+      "dialogs": [ "Grr!" ],
+      "actions": [
+        { "damage": 3, "sentence": "The Green Goblin scratches you." },
+        { "damage": 5, "sentence": "The Green Goblin bites you!" }
+      ],
+      "quests": []
+    },
+    "npc.goblin_red": {
+      "name": "Red Goblin",
+      "description": "A hulking red goblin guarding a pile of loot.",
+      "behaviour": "Aggressive",
+      "hp": 40,
+      "dialogs": [ "You won't take my treasure!" ],
+      "actions": [
+        { "damage": 5, "sentence": "The Red Goblin swings a rusty club." },
+        { "damage": 9, "sentence": "The Red Goblin throws a burning torch at you!" }
+      ],
+      "quests": []
+    }
+  },
+
+  "quests": {
+    "q.herbs": {
+      "name": "Herbs for the Merchant",
+      "description": "The merchant needs healing herbs from the meadow.",
+      "instructions": [ "Bring the Healing Herbs to the Merchant." ],
+      "reward": "item.leather_armor",
+      "unique": true
+    },
+    "q.red_goblin": {
+      "name": "The Stolen Ore",
+      "description": "A red goblin stole the blacksmith's best ore.",
+      "instructions": [
+        "Find the Red Goblin in the cave east of the old road.",
+        "Defeat the Red Goblin.",
+        "Return to the Blacksmith."
+      ],
+      "reward": "item.sword",
+      "unique": true
+    }
+  }
+}
