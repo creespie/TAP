@@ -27,16 +27,23 @@ func cleanLine(raw string) (string, error) {
 	return line, nil
 }
 
-func handleConnect(conn net.Conn, counter int, registry *transport.ConnRegistry) {
+func handleConnection(conn net.Conn, counter int, registry *transport.ConnRegistry, w *world.World) {
 	fmt.Printf("connected client %d: %s\n", counter, conn.RemoteAddr())
+
 	defer registry.Remove(counter)
 	defer fmt.Printf("disconnected client number %d\n", counter)
 	defer conn.Close()
+
+	// Initial greeting
 	fmt.Fprintln(conn, "OK hello proto=1")
+
 	reader := bufio.NewReaderSize(conn, 1024)
 	discarding := false
+
 	for {
+		// Read incoming message
 		raw, err := reader.ReadSlice('\n')
+
 		if err != nil {
 			if errors.Is(err, bufio.ErrBufferFull) && !discarding {
 				discarding = true
@@ -48,22 +55,29 @@ func handleConnect(conn net.Conn, counter int, registry *transport.ConnRegistry)
 				return
 			}
 		}
+
+		// Discard oversized message
 		if discarding {
 			discarding = false
 			continue
 		}
+
+		// Clean and validate message
 		line, err := cleanLine(string(raw))
+
 		if err != nil {
 			fmt.Fprintln(conn, "ERR 400 BAD_REQUEST")
 			continue
 		}
+
 		if line == "" {
 			continue
 		}
-		fmt.Fprintf(conn, "ECHO %s\n", line)
+
+		// Dispatch request
+		transport.DispatchRequest(conn, line, w)
 	}
 }
-
 func main() {
 	port := flag.Int("port", 4242, "TCP port to listen on")
 	worldPath := flag.String("world", "world.json", "World file used to build the server's world")
@@ -105,7 +119,7 @@ func main() {
 			continue
 		}
 		registry.Add(conn, counter)
-		go handleConnect(conn, counter, registry)
+		go handleConnection(conn, counter, registry, w)
 		counter += 1
 	}
 
