@@ -148,8 +148,7 @@ func validate(fw *fileWorld) []string {
 		}
 	}
 
-	// every item / npc is a unique instance: it can be placed in one room only
-	itemRoom := map[string]string{}
+	// every npc is a unique instance: it can be placed in one room only
 	npcRoom := map[string]string{}
 	for _, rid := range sortedKeys(fw.Rooms) {
 		r := fw.Rooms[rid]
@@ -167,10 +166,6 @@ func validate(fw *fileWorld) []string {
 		for _, iid := range r.Items {
 			if _, ok := fw.Items[iid]; !ok {
 				add("room %q: unknown item %q", rid, iid)
-			} else if prev, dup := itemRoom[iid]; dup {
-				add("item %q placed in both %q and %q", iid, prev, rid)
-			} else {
-				itemRoom[iid] = rid
 			}
 		}
 		for _, nid := range r.Npcs {
@@ -215,6 +210,7 @@ func build(fw *fileWorld) *World {
 		Items:   make(map[string]*Object, len(fw.Items)),
 		Npcs:    make(map[string]*Npc, len(fw.Npcs)),
 		Quests:  make(map[string]*Quest, len(fw.Quests)),
+		ItemCount: 1,
 	}
 
 	for id, it := range fw.Items {
@@ -280,12 +276,13 @@ func build(fw *fileWorld) *World {
 			Width:           r.Width,
 			height:          r.Height,
 			Npc:             make(map[string]*Npc, len(r.Npcs)),
-			Objects:         make(map[string]*Object, len(r.Items)),
+			Objects:         make(map[int]*Object, len(r.Items)),
 			Players:         make(map[string]*Player),
 			AccessibleRooms: make(map[string]*Room, len(r.Exits)),
 		}
 		for _, iid := range r.Items {
-			room.Objects[iid] = w.Items[iid]
+			inst := w.NewItem(iid)
+			room.Objects[inst.ItemNumber] = inst
 		}
 		for _, nid := range r.Npcs {
 			room.Npc[nid] = w.Npcs[nid]

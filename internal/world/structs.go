@@ -14,6 +14,16 @@ type World struct {
 	Quests      map[string]*Quest  // all quests by id
 	StartRoom   *Room              // where new players appear
 	RespawnRoom *Room              // safe room for players at 0 HP
+	ItemCount	int
+}
+
+func (w *World) NewItem(typeID string) *Object{
+	original := w.Items[typeID]
+	inst := *original        // copia di tutta la struct
+	inst.ItemNumber = w.ItemCount
+	w.ItemCount++
+	return &inst
+	
 }
 
 type Room struct {
@@ -21,7 +31,7 @@ type Room struct {
 	Name            string
 	Description     string
 	Npc             map[string]*Npc
-	Objects         map[string]*Object
+	Objects         map[int]*Object
 	Width, height   int
 	Players         map[string]*Player
 	AccessibleRooms map[string]*Room // key = direction (north, south, ...)
@@ -34,7 +44,7 @@ type Npc struct {
 	Name        string
 	Description string
 	Hp          int
-	IsAliVe     bool
+	IsAlive     bool
 	Behaviour   Behaviour
 	Dialogs     map[int]string
 	Action      map[int]*Action
@@ -55,6 +65,7 @@ type Quest struct {
 
 type Object struct {
 	Id          string
+	ItemNumber	int
 	Name        string
 	Obtainable  bool
 	Category    Category
@@ -68,7 +79,7 @@ type Player struct {
 	Stats       Stats
 	Inventory   map[int]*Object
 	Equipment   Equipment
-	Quests      map[int]Quest
+	Quests      map[string]Quest
 	Group       *Group
 	Invites     map[int]*Group
 	CurrentRoom *Room
