@@ -6,6 +6,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"strconv"
 
 	"tap/internal/world"
 )
@@ -84,4 +85,10 @@ func HandleMove(w *world.World, dir string, player *world.Player) {
 	}
 	MovePlayer(player, next)
 	Send(player, "OK room="+next.Id)
+}
+
+
+func HandleWho(w *world.World, player *world.Player){
+	count := len(w.Players)
+	Send(player, "OK players=" + strconv.Itoa(count))
 }

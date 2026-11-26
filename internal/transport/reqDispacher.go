@@ -93,7 +93,7 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 				return
 			}
 
-			//handleWho(conn, w) DA FAREE diocnae
+			handlers.HandleWho(w, player)
 
 		case "GROUP":
 
