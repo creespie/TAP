@@ -154,8 +154,8 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 				return
 			}
 
-			//itemName := strings.Join(args, " ")
-			//handleTake(conn, itemName, w)DA FAREE diocane
+			itemName := strings.ToLower(strings.Join(args, " "))
+			handlers.HandleTake(w, player, itemName)
 
 		case "DROP":
 
@@ -164,8 +164,8 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 				return
 			}
 
-			//itemName := strings.Join(args, " ")
-			//handleDrop(conn, itemName, w) DA FAREE diocane
+			itemName := strings.ToLower(strings.Join(args, " "))
+			handlers.HandleDrop(w, player, itemName)
 
 		case "INVENTORY":
 

@@ -92,3 +92,27 @@ func HandleWho(w *world.World, player *world.Player){
 	count := len(w.Players)
 	Send(player, "OK players=" + strconv.Itoa(count))
 }
+
+func HandleTake(w *world.World, player *world.Player, item string){
+	room := player.CurrentRoom
+	foundItem := FindItem(room.Objects, item)
+	if foundItem == nil{
+		Send(player, "ERR 404 ITEM_NOT_FOUND")
+		return
+	}
+	player.Inventory[foundItem.ItemNumber] = foundItem
+	delete(room.Objects, foundItem.ItemNumber)
+	Send(player, "OK taken="+ foundItem.Id)
+}
+
+func HandleDrop(w *world.World, player *world.Player, item string){
+	room := player.CurrentRoom
+	foundItem := FindItem(player.Inventory, item)
+	if foundItem == nil{
+		Send(player, "ERR 404 ITEM_NOT_IN_INVENTORY")
+		return
+	}
+	room.Objects[foundItem.ItemNumber] = foundItem
+	delete(player.Inventory, foundItem.ItemNumber)
+	Send(player, "OK taken="+ foundItem.Id)
+}

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"tap/internal/world"
+	"strings"
 )
 
 //general function to remove every instance of a player in the world
@@ -18,4 +19,18 @@ func MovePlayer(player *world.Player, room *world.Room) {
 	delete(player.CurrentRoom.Players, player.Name)
 	room.Players[player.Name] = player
 	player.CurrentRoom = room
+}
+
+// FindItem returns the first item in objects matching arg, or nil.
+// arg can be the full id ("item.herbs"), the id without the "item."
+// prefix ("herbs") or the display name ("Healing Herbs"); case is ignored.
+func FindItem(objects map[int]*world.Object, arg string) *world.Object {
+	for _, obj := range objects {
+		if strings.EqualFold(obj.Id, arg) ||
+			strings.EqualFold(strings.TrimPrefix(obj.Id, "item."), arg) ||
+			strings.EqualFold(obj.Name, arg) {
+			return obj
+		}
+	}
+	return nil
 }
