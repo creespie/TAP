@@ -14,16 +14,16 @@ type World struct {
 	Quests      map[string]*Quest  // all quests by id
 	StartRoom   *Room              // where new players appear
 	RespawnRoom *Room              // safe room for players at 0 HP
-	ItemCount	int
+	ItemCount   int
 }
 
-func (w *World) NewItem(typeID string) *Object{
+func (w *World) NewItem(typeID string) *Object {
 	original := w.Items[typeID]
-	inst := *original        // copia di tutta la struct
+	inst := *original // copia di tutta la struct
 	inst.ItemNumber = w.ItemCount
 	w.ItemCount++
 	return &inst
-	
+
 }
 
 type Room struct {
@@ -65,7 +65,7 @@ type Quest struct {
 
 type Object struct {
 	Id          string
-	ItemNumber	int
+	ItemNumber  int
 	Name        string
 	Obtainable  bool
 	Category    Category

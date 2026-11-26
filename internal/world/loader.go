@@ -205,11 +205,11 @@ func validate(fw *fileWorld) []string {
 // build converts the validated file data into the runtime structs.
 func build(fw *fileWorld) *World {
 	w := &World{
-		Rooms:   make(map[string]*Room, len(fw.Rooms)),
-		Players: make(map[string]*Player),
-		Items:   make(map[string]*Object, len(fw.Items)),
-		Npcs:    make(map[string]*Npc, len(fw.Npcs)),
-		Quests:  make(map[string]*Quest, len(fw.Quests)),
+		Rooms:     make(map[string]*Room, len(fw.Rooms)),
+		Players:   make(map[string]*Player),
+		Items:     make(map[string]*Object, len(fw.Items)),
+		Npcs:      make(map[string]*Npc, len(fw.Npcs)),
+		Quests:    make(map[string]*Quest, len(fw.Quests)),
 		ItemCount: 1,
 	}
 
