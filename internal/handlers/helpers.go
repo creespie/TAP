@@ -1,6 +1,6 @@
 package handlers
 
-import(
+import (
 	"tap/internal/world"
 )
 
@@ -14,7 +14,7 @@ func RemovePlayer(w *world.World, player *world.Player) {
 }
 
 //general function to move player to next room
-func MovePlayer(player *world.Player, room *world.Room){
+func MovePlayer(player *world.Player, room *world.Room) {
 	delete(player.CurrentRoom.Players, player.Name)
 	room.Players[player.Name] = player
 	player.CurrentRoom = room

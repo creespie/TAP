@@ -72,7 +72,6 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 
 		scope := strings.ToUpper(args[0])
 		message := strings.Join(args[1:], " ")
-		_ = message //questo lho fatto solo cosi almeno compila cristo maiale di go
 
 		switch scope {
 
