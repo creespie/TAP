@@ -77,6 +77,35 @@ func sendQuest(player *world.Player, q world.Quest, status string, progress stri
 	Send(player, "OK "+string(data))
 }
 
+type questListInstance struct {
+	QuestID  string `json:"quest_id"`
+	Status   string `json:"status"`
+	Progress string `json:"progress,omitempty"`
+}
+
+func sendQuestList(player *world.Player) {
+	questList := make([]questListInstance, 0, len(player.Quests))
+	for _, q := range player.Quests {
+		sta := "active"
+		if q.Completed {
+			sta = "completed"
+		}
+		resp := questListInstance{
+			QuestID:  q.Id,
+			Status:   sta,
+			Progress: fmt.Sprintf("%d/%d", questProgress(player, q), q.Count),
+		}
+		questList = append(questList, resp)
+	}
+	data, err := json.Marshal(questList)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "quest: marshal:", err)
+		Send(player, "ERR 500 INTERNAL_ERROR")
+		return
+	}
+	Send(player, "OK "+string(data))
+}
+
 // questProgress returns how far the player is: items owned (fetch) or kills (kill).
 func questProgress(player *world.Player, q world.Quest) int {
 	if q.Type == world.Fetch {

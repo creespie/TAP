@@ -223,7 +223,7 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 				return
 			}
 
-			//handleQuests(conn, w) DA FAREE diocane
+			handlers.HandleQuests(w, player)
 
 		//scoinsciuto il comando in questo caso , o pure ne impetiamo dei nostri.
 		default:

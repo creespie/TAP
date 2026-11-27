@@ -202,3 +202,11 @@ func HandleQuest(w *world.World, player *world.Player, npcName string) {
 	player.Quests[def.Id] = q
 	sendQuest(player, q, "completed", "")
 }
+
+func HandleQuests(w *world.World, player *world.Player) {
+	if len(player.Quests) == 0 {
+		Send(player, "OK You haven't received any quest")
+		return
+	}
+	sendQuestList(player)
+}
