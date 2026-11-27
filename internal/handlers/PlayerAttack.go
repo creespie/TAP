@@ -1,45 +1,70 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
-	"strconv"
+	"os"
 
 	"tap/internal/world"
 )
 
-//deals damage to npc, returns true if the npc dies
-func playerHits(w *world.World, npc *world.Npc, pStats world.Stats, player *world.Player) bool {
-	crit := w.Rand.Intn(100) < world.CriticalChance+pStats.Luck
-	if crit {
-		Send(player, "Critical Attack! "+strconv.Itoa(pStats.Attack*world.CriticalMultiplier)+"DMG!")
-		npc.Hp -= pStats.Attack * world.CriticalMultiplier
-	} else {
-		Send(player, "You attacked for "+strconv.Itoa(pStats.Attack)+"DMG!")
-		npc.Hp -= pStats.Attack
-	}
-	if npc.Hp > 0 {
-		return false
-	}
-	npc.IsAlive = false
-	return true
+// attackResponse is the reply to ATTACK, in the format of RFC 42TAP 5.4.5.
+type attackResponse struct {
+	AttackerHP int    `json:"attacker_hp"`
+	TargetHP   int    `json:"target_hp"`
+	Damage     int    `json:"damage"`
+	Status     string `json:"status"` // "combat", "victory" or "defeated"
 }
 
-//deals damage to player, returns true if the player dies
-func npcHits(w *world.World, npc *world.Npc, pStats world.Stats, player *world.Player) bool {
-	crit := w.Rand.Intn(100) < world.CriticalChance
-	action := npc.Action[w.Rand.Intn(len(npc.Action))]
+// combatEvent tells everyone in room what happened in a fight.
+func combatEvent(room *world.Room, text string) {
+	SendToAll(room.Players, "EVT ROOM COMBAT "+text)
+}
+
+// playerHits deals the player's damage to npc and returns it.
+func playerHits(w *world.World, player *world.Player, npc *world.Npc, s world.Stats) int {
+	dmg := s.Attack
+	crit := w.Rand.Intn(100) < world.CriticalChance+s.Luck
 	if crit {
-		Send(player, action.Sentence)
-		Send(player, "The "+npc.Name+" attack was critical!")
-		player.Stats.Health -= action.Damage * world.CriticalMultiplier
-	} else {
-		Send(player, action.Sentence)
-		player.Stats.Health -= action.Damage
+		dmg *= world.CriticalMultiplier
 	}
-	if player.Stats.Health > 0 {
-		return false
+	if dmg < 1 {
+		dmg = 1
 	}
-	return true
+	npc.Hp -= dmg
+
+	text := fmt.Sprintf("%s hits %s for %d", player.Name, npc.Name, dmg)
+	if crit {
+		text += " (critical)"
+	}
+	combatEvent(player.CurrentRoom, text)
+	return dmg
+}
+
+// npcHits deals the damage of a random npc action to the player and returns it.
+// The player's defense is subtracted; every hit deals at least 1.
+func npcHits(w *world.World, player *world.Player, npc *world.Npc, s world.Stats) int {
+	if len(npc.Action) == 0 {
+		return 0
+	}
+	action := npc.Action[w.Rand.Intn(len(npc.Action))]
+	dmg := action.Damage
+	crit := w.Rand.Intn(100) < world.CriticalChance
+	if crit {
+		dmg *= world.CriticalMultiplier
+	}
+	dmg -= s.Defense
+	if dmg < 1 {
+		dmg = 1
+	}
+	player.Stats.Health -= dmg
+
+	text := fmt.Sprintf("%s %s takes %d damage", action.Sentence, player.Name, dmg)
+	if crit {
+		text += " (critical)"
+	}
+	combatEvent(player.CurrentRoom, text)
+	return dmg
 }
 
 // registerKill advances every active kill quest of player that targets npcID.
@@ -53,19 +78,55 @@ func registerKill(player *world.Player, npcID string) {
 	}
 }
 
-func respawnPlayer(player *world.Player, w *world.World) {
-	//chance of droping the weapon
-	lost := w.Rand.Float64() < world.WeaponDropChance
-	weapon := player.Equipment[world.Weapon]
-	if lost && weapon != nil {
-		player.CurrentRoom.Objects[weapon.ItemNumber] = weapon
-		delete(player.Equipment, world.Weapon)
+// creditKill gives the kill to the killer, or to every member of the
+// killer's group (the killer included) if the killer is in a group.
+func creditKill(killer *world.Player, npcID string) {
+	if killer.Group == nil {
+		registerKill(killer, npcID)
+		return
 	}
-	player.Stats.Health = world.PlayerRespawnHealth
-	player.CurrentRoom = w.RespawnRoom
-	player.Target = nil
+	for _, member := range killer.Group.Players {
+		registerKill(member, npcID)
+	}
 }
 
+// npcDies marks npc as dead, ends the fight for everyone who was fighting it
+// and credits the kill to the killer's group.
+func npcDies(killer *world.Player, npc *world.Npc) {
+	room := killer.CurrentRoom
+	npc.Hp = 0
+	npc.IsAlive = false
+	for _, p := range room.Players {
+		if p.Target == npc {
+			p.Target = nil
+		}
+	}
+	combatEvent(room, fmt.Sprintf("%s has been defeated by %s", npc.Name, killer.Name))
+	SendToAll(room.Players, "EVT ROOM NPC DEATH "+npc.Id)
+	creditKill(killer, npc.Id)
+}
+
+// respawnPlayer handles a player at 0 HP: the equipped weapon may drop in the
+// room, then the player reappears in the respawn room with reduced HP.
+func respawnPlayer(w *world.World, player *world.Player) {
+	room := player.CurrentRoom
+	combatEvent(room, player.Name+" has been defeated")
+
+	weapon := player.Equipment[world.Weapon]
+	if weapon != nil && w.Rand.Float64() < world.WeaponDropChance {
+		delete(player.Equipment, world.Weapon)
+		room.Objects[weapon.ItemNumber] = weapon
+		SendToAll(room.Players, "EVT ROOM ITEM DROP "+player.Name+" "+weapon.Id)
+	}
+
+	player.Target = nil
+	player.Stats.Health = world.PlayerRespawnHealth
+	MovePlayer(player, w.RespawnRoom)
+}
+
+// HandleAttack plays one turn of combat against an npc in the player's room.
+// The fastest fighter (speed x random roll, rolled every turn) hits first;
+// the other hits back if still alive. The reply is always one OK line.
 func HandleAttack(w *world.World, player *world.Player, npcName string) {
 	npc := FindNpc(player.CurrentRoom, npcName)
 	if npc == nil {
@@ -77,39 +138,49 @@ func HandleAttack(w *world.World, player *world.Player, npcName string) {
 		return
 	}
 	if player.Target != nil && player.Target != npc {
-		Send(player, "ERR 405 ALREADY_IN_COMBAT")
+		Send(player, "ERR 407 IN_COMBAT")
 		return
 	}
 	player.Target = npc
-	pStats := PlayerStats(player)
-	//checks who attacks first
-	if float64(pStats.Speed)*w.Rand.Float64() > float64(npc.Speed)*w.Rand.Float64() {
-		killed := playerHits(w, npc, pStats, player)
-		if killed {
-			Send(player, "OK killed "+npc.Name)
-			registerKill(player, npc.Id)
-			player.Target = nil
-			return
-		}
-		pKilled := npcHits(w, npc, pStats, player)
-		if pKilled {
-			Send(player, "ARGH! You died!")
-			respawnPlayer(player, w)
-			return
+	s := PlayerStats(player)
+
+	dealt := 0
+	playerFirst := float64(s.Speed)*w.Rand.Float64() > float64(npc.Speed)*w.Rand.Float64()
+	if playerFirst {
+		dealt = playerHits(w, player, npc, s)
+		if npc.Hp > 0 {
+			npcHits(w, player, npc, s)
 		}
 	} else {
-		pKilled := npcHits(w, npc, pStats, player)
-		if pKilled {
-			Send(player, "ARGH! You died!")
-			respawnPlayer(player, w)
-			return
-		}
-		killed := playerHits(w, npc, pStats, player)
-		if killed {
-			Send(player, "OK killed "+npc.Name)
-			registerKill(player, npc.Id)
-			player.Target = nil
-			return
+		npcHits(w, player, npc, s)
+		if player.Stats.Health > 0 {
+			dealt = playerHits(w, player, npc, s)
 		}
 	}
+
+	status := "combat"
+	if npc.Hp <= 0 {
+		status = "victory"
+		npcDies(player, npc)
+	} else if player.Stats.Health <= 0 {
+		status = "defeated"
+		respawnPlayer(w, player)
+	}
+
+	targetHP := npc.Hp
+	if targetHP < 0 {
+		targetHP = 0
+	}
+	data, err := json.Marshal(attackResponse{
+		AttackerHP: player.Stats.Health, // after a defeat: the HP the player respawned with
+		TargetHP:   targetHP,
+		Damage:     dealt,
+		Status:     status,
+	})
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "attack: marshal:", err)
+		Send(player, "ERR 500 INTERNAL_ERROR")
+		return
+	}
+	Send(player, "OK "+string(data))
 }
