@@ -26,6 +26,11 @@ type lookResponse struct {
 	Npcs       []string       `json:"npcs"`
 }
 
+var equippable = map[world.Category]bool{
+	world.Weapon: true, world.Helmet: true, world.Chestplate: true,
+	world.Boots: true, world.Ring: true,
+}
+
 func HandleLook(w *world.World, player *world.Player) {
 	room := player.CurrentRoom
 	lRoom := lookRoom{
@@ -133,6 +138,23 @@ func HandleInventory(w *world.World, player *world.Player) {
 	Send(player, "OK "+string(data))
 }
 
+func HandleEquipment(w *world.World, player *world.Player) {
+	itemz := make([]string, 0, len(player.Equipment))
+	for _, item := range player.Equipment {
+		itemz = append(itemz, item.Id)
+	}
+	sort.Strings(itemz)
+
+	data, err := json.Marshal(itemz)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Equipment: marshal:", err)
+		Send(player, "ERR 500 INTERNAL_ERROR")
+		return
+	}
+	Send(player, "OK "+string(data))
+}
+
+
 func HandleTalk(w *world.World, player *world.Player, npcName string) {
 	npc := FindNpc(player.CurrentRoom, npcName)
 	if npc == nil {
@@ -211,16 +233,47 @@ func HandleQuests(w *world.World, player *world.Player) {
 	sendQuestList(player)
 }
 
-func HandleAbandonQuest(w *world.World, player *world.Player, questId string){
-	if len(player.Quests) == 0{
+func HandleAbandonQuest(w *world.World, player *world.Player, questId string) {
+	if len(player.Quests) == 0 {
 		Send(player, "ERR 404 YOU DON'T HAVE ANY QUESTS")
 		return
 	}
-	q, ok := player.Quests[questId]
-	if !ok{
-		Send(player, "ERR 404 NO MATCHING QUEST ID IN QUESTS")
+	q, ok := FindQuest(player.Quests, questId)
+	if !ok {
+		Send(player, "ERR 404 NO_MATCHING_QUEST_ID_IN_QUESTS")
 		return
 	}
 	delete(player.Quests, q.Id)
 	Send(player, "OK")
+}
+
+func HandleEquip(w *world.World, player *world.Player, itemId string) {
+	item := FindItem(player.Inventory, itemId)
+	if item == nil {
+		Send(player, "ERR 404 ITEM_NOT_FOUND")
+		return
+	}
+	if !equippable[item.Category]{
+		Send(player, "ERR 408 ITEM_NOT_EQUIPPABLE")
+		return
+	}
+	old := player.Equipment[item.Category]  // cosa c'era prima (o nil)
+	player.Equipment[item.Category] = item  // metti il nuovo
+	delete(player.Inventory, item.ItemNumber)
+	if old != nil {
+		player.Inventory[old.ItemNumber] = old // il vecchio torna nell'inventario
+	}
+	Send(player, "OK equipped="+item.Id)
+}
+
+
+func HandleUnequip(w *world.World, player *world.Player, arg string) {
+	item := FindItem(EquippedItems(player), arg)
+	if item == nil {
+		Send(player, "ERR 404 ITEM_NOT_EQUIPPED")
+		return
+	}
+	delete(player.Equipment, item.Category)
+	player.Inventory[item.ItemNumber] = item
+	Send(player, "OK unequipped="+item.Id)
 }

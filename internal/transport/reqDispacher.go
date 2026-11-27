@@ -176,6 +176,15 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 
 			handlers.HandleInventory(w, player)
 
+		case "EQUIPMENT":
+
+			if len(args) != 0 {
+				handlers.Send(player, "ERR 400 BAD_REQUEST")
+				return
+			}
+
+			handlers.HandleEquipment(w, player)
+
 		case "TALK":
 
 			if len(args) == 0 {
@@ -224,7 +233,7 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 			}
 
 			handlers.HandleQuests(w, player)
-		
+
 		case "ABANDON_QUEST":
 
 			if len(args) != 1 {
@@ -233,6 +242,23 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 			}
 
 			handlers.HandleAbandonQuest(w, player, args[0])
+
+		case "EQUIP":
+
+			if len(args) != 1 {
+				handlers.Send(player, "ERR 400 BAD_REQUEST")
+				return
+			}
+
+			handlers.HandleEquip(w, player, args[0])
+		case "UNEQUIP":
+
+			if len(args) != 1 {
+				handlers.Send(player, "ERR 400 BAD_REQUEST")
+				return
+			}
+
+			handlers.HandleUnequip(w, player, args[0])
 		//scoinsciuto il comando in questo caso , o pure ne impetiamo dei nostri.
 		default:
 			handlers.Send(player, "ERR 400 UNKNOWN_COMMAND")

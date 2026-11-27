@@ -79,21 +79,13 @@ type Player struct {
 	Name        string
 	Stats       Stats
 	Inventory   map[int]*Object
-	Equipment   Equipment
+	Equipment   map[Category]*Object
 	Quests      map[string]Quest
 	Group       *Group
 	Invites     map[string]*Group
 	CurrentRoom *Room
 	Outbox      chan string
 	TalkIndex   map[string]int
-}
-
-type Equipment struct {
-	Weapon     *Object
-	Helmet     *Object
-	Chestplate *Object
-	Boots      *Object
-	Ring       *Object
 }
 
 type Action struct {

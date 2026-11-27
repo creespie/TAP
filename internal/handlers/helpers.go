@@ -52,6 +52,17 @@ func FindNpc(room *world.Room, arg string) *world.Npc {
 	return nil
 }
 
+func FindQuest(objects map[string]world.Quest, arg string) (world.Quest, bool) {
+	for _, obj := range objects {
+		if strings.EqualFold(obj.Id, arg) ||
+			strings.EqualFold(strings.TrimPrefix(obj.Id, "q."), arg) ||
+			strings.EqualFold(obj.Name, arg) {
+			return obj, true
+		}
+	}
+	return world.Quest{}, false
+}
+
 type questResponse struct {
 	QuestID     string `json:"quest_id"`
 	Description string `json:"description"`
@@ -134,4 +145,12 @@ func removeItems(inv map[int]*world.Object, typeID string, n int) {
 			n--
 		}
 	}
+}
+
+func EquippedItems(player *world.Player) map[int]*world.Object {
+	items := make(map[int]*world.Object)
+	for _, obj := range player.Equipment {
+		items[obj.ItemNumber] = obj
+	}
+	return items
 }

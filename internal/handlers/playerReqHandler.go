@@ -54,6 +54,7 @@ func HandleConnect(conn net.Conn, name string, w *world.World) {
 		Inventory: make(map[int]*world.Object),
 		Quests:    make(map[string]world.Quest),
 		Invites:   make(map[string]*world.Group),
+		Equipment: make(map[world.Category]*world.Object),
 
 		CurrentRoom: w.StartRoom,
 		Outbox:      make(chan string, world.OutboxSize),
