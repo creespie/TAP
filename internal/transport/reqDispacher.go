@@ -224,7 +224,15 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 			}
 
 			handlers.HandleQuests(w, player)
+		
+		case "ABANDON_QUEST":
 
+			if len(args) != 1 {
+				handlers.Send(player, "ERR 400 BAD_REQUEST")
+				return
+			}
+
+			handlers.HandleAbandonQuest(w, player, args[0])
 		//scoinsciuto il comando in questo caso , o pure ne impetiamo dei nostri.
 		default:
 			handlers.Send(player, "ERR 400 UNKNOWN_COMMAND")

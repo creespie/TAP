@@ -210,3 +210,17 @@ func HandleQuests(w *world.World, player *world.Player) {
 	}
 	sendQuestList(player)
 }
+
+func HandleAbandonQuest(w *world.World, player *world.Player, questId string){
+	if len(player.Quests) == 0{
+		Send(player, "ERR 404 YOU DON'T HAVE ANY QUESTS")
+		return
+	}
+	q, ok := player.Quests[questId]
+	if !ok{
+		Send(player, "ERR 404 NO MATCHING QUEST ID IN QUESTS")
+		return
+	}
+	delete(player.Quests, q.Id)
+	Send(player, "OK")
+}
