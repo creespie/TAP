@@ -202,9 +202,8 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 				return
 			}
 
-			//npcName := strings.Join(args, " ")
-			//handleAttack(conn, npcName, w) DA FAREE diocane
-
+			npcName := strings.Join(args, " ")
+			handlers.HandleAttack(w, player, npcName)
 		// PLAYER STATUS
 		case "STATUS":
 
@@ -251,6 +250,7 @@ func DispatchRequest(conn net.Conn, line string, w *world.World) {
 			}
 
 			handlers.HandleEquip(w, player, args[0])
+
 		case "UNEQUIP":
 
 			if len(args) != 1 {

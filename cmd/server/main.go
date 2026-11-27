@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"math/rand"
 	"net"
 	"os"
 	"os/signal"
@@ -14,6 +15,7 @@ import (
 	"tap/internal/handlers"
 	"tap/internal/transport"
 	"tap/internal/world"
+	"time"
 	"unicode/utf8"
 )
 
@@ -101,6 +103,11 @@ func main() {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)
 	}
+	if *seed == 0 {
+		*seed = time.Now().UnixNano()
+	}
+	w.Rand = rand.New(rand.NewSource(*seed))
+	fmt.Printf("random seed: %d\n", *seed)
 	fmt.Printf("World loaded: %d rooms, %d items, %d npcs, %d quests\n", len(w.Rooms), len(w.Items), len(w.Npcs), len(w.Quests))
 	ln, err := net.Listen("tcp", net.JoinHostPort(*host, strconv.Itoa(*port)))
 	if err != nil {

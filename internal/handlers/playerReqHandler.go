@@ -46,6 +46,7 @@ func HandleConnect(conn net.Conn, name string, w *world.World) {
 		Stats: world.Stats{
 			Health:    world.PlayerStartingHealth, //LUDO! messo tutto nelle costanti DENTRO gameConstats cosi le possiamo editare visto che non abbiamo anxoria appurato come sarail gioco
 			MaxHealth: world.PlayerStartingHealth,
+			Attack:    world.BaseAttackDamage,
 			Speed:     world.PlayerStartingSpeed,
 			Defense:   world.PlayerStartingDefense,
 			Luck:      world.PlayerStartingLuck,
@@ -55,6 +56,7 @@ func HandleConnect(conn net.Conn, name string, w *world.World) {
 		Quests:    make(map[string]world.Quest),
 		Invites:   make(map[string]*world.Group),
 		Equipment: make(map[world.Category]*world.Object),
+		Target:    nil,
 
 		CurrentRoom: w.StartRoom,
 		Outbox:      make(chan string, world.OutboxSize),

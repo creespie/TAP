@@ -44,6 +44,7 @@ type fileNpc struct {
 	Description string       `json:"description"`
 	Behaviour   string       `json:"behaviour"`
 	Hp          int          `json:"hp"`
+	Speed       int          `json:"speed"`
 	Dialogs     []string     `json:"dialogs"`
 	Actions     []fileAction `json:"actions"`
 	Quest       string       `json:"quest"` // id of the quest given by this npc, "" if none
@@ -162,6 +163,12 @@ func validate(fw *fileWorld) []string {
 		if n.Hp <= 0 {
 			add("npc %q: hp must be > 0", id)
 		}
+		if Behaviour(n.Behaviour) == Aggressive && n.Speed <= 0 {
+			add("npc %q: Aggressive npc needs speed > 0", id)
+		}
+		if Behaviour(n.Behaviour) == Aggressive && len(n.Actions) == 0 {
+			add("npc %q: Aggressive npc needs at least one action", id)
+		}
 		if n.Quest != "" {
 			if _, ok := fw.Quests[n.Quest]; !ok {
 				add("npc %q: quest %q does not exist", id, n.Quest)
@@ -270,6 +277,8 @@ func build(fw *fileWorld) *World {
 			Name:        n.Name,
 			Description: n.Description,
 			Hp:          n.Hp,
+			MaxHp:       n.Hp,
+			Speed:       n.Speed,
 			IsAlive:     true,
 			Behaviour:   Behaviour(n.Behaviour),
 			Dialogs:     make(map[int]string, len(n.Dialogs)),

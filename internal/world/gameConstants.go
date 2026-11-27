@@ -30,6 +30,7 @@ const (
 const (
 	MaxInventoryItems = 20 // Design choice
 	MaxGroupPlayers   = 4  // Design choice
+	WeaponDropChance  = 0.5
 )
 
 // ==================================

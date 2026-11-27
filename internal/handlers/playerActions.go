@@ -154,7 +154,6 @@ func HandleEquipment(w *world.World, player *world.Player) {
 	Send(player, "OK "+string(data))
 }
 
-
 func HandleTalk(w *world.World, player *world.Player, npcName string) {
 	npc := FindNpc(player.CurrentRoom, npcName)
 	if npc == nil {
@@ -253,19 +252,18 @@ func HandleEquip(w *world.World, player *world.Player, itemId string) {
 		Send(player, "ERR 404 ITEM_NOT_FOUND")
 		return
 	}
-	if !equippable[item.Category]{
+	if !equippable[item.Category] {
 		Send(player, "ERR 408 ITEM_NOT_EQUIPPABLE")
 		return
 	}
-	old := player.Equipment[item.Category]  // cosa c'era prima (o nil)
-	player.Equipment[item.Category] = item  // metti il nuovo
+	old := player.Equipment[item.Category] // cosa c'era prima (o nil)
+	player.Equipment[item.Category] = item // metti il nuovo
 	delete(player.Inventory, item.ItemNumber)
 	if old != nil {
 		player.Inventory[old.ItemNumber] = old // il vecchio torna nell'inventario
 	}
 	Send(player, "OK equipped="+item.Id)
 }
-
 
 func HandleUnequip(w *world.World, player *world.Player, arg string) {
 	item := FindItem(EquippedItems(player), arg)

@@ -154,3 +154,22 @@ func EquippedItems(player *world.Player) map[int]*world.Object {
 	}
 	return items
 }
+
+// PlayerStats returns the player's base stats plus the bonuses of the
+// equipped items. It never modifies player.Stats.
+func PlayerStats(player *world.Player) world.Stats {
+	s := player.Stats // copy
+	for _, item := range player.Equipment {
+		switch item.Category {
+		case world.Weapon:
+			s.Attack += item.Stat
+		case world.Helmet, world.Chestplate:
+			s.Defense += item.Stat
+		case world.Boots:
+			s.Speed += item.Stat
+		case world.Ring:
+			s.Luck += item.Stat
+		}
+	}
+	return s
+}

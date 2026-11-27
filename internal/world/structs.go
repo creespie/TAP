@@ -1,6 +1,7 @@
 package world
 
 import (
+	"math/rand"
 	"net"
 	"sync"
 )
@@ -15,6 +16,7 @@ type World struct {
 	StartRoom   *Room              // where new players appear
 	RespawnRoom *Room              // safe room for players at 0 HP
 	ItemCount   int
+	Rand        *rand.Rand
 }
 
 func (w *World) NewItem(typeID string) *Object {
@@ -44,6 +46,8 @@ type Npc struct {
 	Name        string
 	Description string
 	Hp          int
+	MaxHp       int
+	Speed       int
 	IsAlive     bool
 	Behaviour   Behaviour
 	Dialogs     map[int]string
@@ -86,6 +90,7 @@ type Player struct {
 	CurrentRoom *Room
 	Outbox      chan string
 	TalkIndex   map[string]int
+	Target      *Npc
 }
 
 type Action struct {
@@ -96,6 +101,7 @@ type Action struct {
 type Stats struct {
 	Health    int
 	MaxHealth int
+	Attack    int
 	Speed     int
 	Defense   int
 	Luck      int
