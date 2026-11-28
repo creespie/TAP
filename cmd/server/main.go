@@ -13,6 +13,7 @@ import (
 	"strings"
 	"syscall"
 	"tap/internal/handlers"
+	"tap/internal/logger"
 	"tap/internal/transport"
 	"tap/internal/world"
 	"time"
@@ -32,6 +33,7 @@ func cleanLine(raw string) (string, error) {
 
 func handleConnection(conn net.Conn, counter int, registry *transport.ConnRegistry, w *world.World) {
 	fmt.Printf("connected client %d: %s\n", counter, conn.RemoteAddr())
+	
 
 	defer registry.Remove(counter)
 	defer fmt.Printf("disconnected client number %d\n", counter)
@@ -73,6 +75,11 @@ func handleConnection(conn net.Conn, counter int, registry *transport.ConnRegist
 			continue
 		}
 
+		
+		if !logger.AllowCommand(counter, "") {
+			continue
+		}
+
 		// Clean and validate message
 		line, err := cleanLine(string(raw))
 
@@ -81,42 +88,56 @@ func handleConnection(conn net.Conn, counter int, registry *transport.ConnRegist
 			continue
 		}
 
-		if line == "" {
+	
+		if !logger.AllowCommand(counter, "") {
 			continue
 		}
-
 		// Dispatch request
 		transport.DispatchRequest(conn, line, w)
 	}
 }
 
 func main() {
+	if err := run(); err != nil {
+		fmt.Fprintln(os.Stderr, "error:", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	port := flag.Int("port", 4242, "TCP port to listen on")
 	worldPath := flag.String("world", "world.json", "World file used to build the server's world")
 	seed := flag.Int64("seed", 0, "Seed to determine luck and random rolls inside the game")
 	host := flag.String("host", "", "Host address")
-
+	logFile := flag.String("log", "server.log", "Log file path")
 	flag.Parse()
-	fmt.Printf("%d %s %d\n", *port, *worldPath, *seed)
+
+	if err := logger.Init(*logFile); err != nil {
+		return err
+	}
+	defer logger.Close()
+
 	w, err := world.Load(*worldPath)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "error:", err)
-		os.Exit(1)
+		logger.Error("world_load_failed", "path", *worldPath, "err", err.Error())
+		return err
 	}
 	if *seed == 0 {
 		*seed = time.Now().UnixNano()
 	}
 	w.Rand = rand.New(rand.NewSource(*seed))
-	fmt.Printf("random seed: %d\n", *seed)
-	fmt.Printf("World loaded: %d rooms, %d items, %d npcs, %d quests\n", len(w.Rooms), len(w.Items), len(w.Npcs), len(w.Quests))
+	logger.Info("world_loaded", "rooms", len(w.Rooms), "items", len(w.Items),
+		"npcs", len(w.Npcs), "quests", len(w.Quests), "seed", *seed)
+
 	ln, err := net.Listen("tcp", net.JoinHostPort(*host, strconv.Itoa(*port)))
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "error:", err)
-		os.Exit(1)
+		logger.Error("listen_failed", "err", err.Error())
+		return err
 	}
 	registry := transport.NewConnRegistry()
 	defer ln.Close()
-	fmt.Printf("Listening on %s\n", ln.Addr())
+	logger.Info("server_listening", "addr", ln.Addr().String())
+
 	counter := 1
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -128,16 +149,15 @@ func main() {
 		conn, err := ln.Accept()
 		if err != nil {
 			if errors.Is(err, net.ErrClosed) {
-				fmt.Fprintln(os.Stderr, "Server shutting down")
+				logger.Info("server_shutting_down")
 				registry.CloseAll()
-				return
+				return nil
 			}
-			fmt.Fprintln(os.Stderr, "error:", err)
+			logger.Error("accept_failed", "err", err.Error())
 			continue
 		}
 		registry.Add(conn, counter)
 		go handleConnection(conn, counter, registry, w)
 		counter += 1
 	}
-
 }
