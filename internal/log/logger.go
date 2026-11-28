@@ -1,9 +1,10 @@
-
 package logger
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"io"
-	"log/slog"
 	"os"
 	"strings"
 	"sync"
@@ -11,34 +12,55 @@ import (
 )
 
 const (
-	MaxCommandsPerSecond = 20    
-	MaxConnectionsPerIP  = 100
+	MaxCommandsPerSecond = 5
+	MaxConnectionsPerIP  = 10
 	QueueSize            = 65536
 )
 
 var (
-	out   = slog.New(slog.NewJSONHandler(io.Discard, nil))
-	queue chan []byte                                   
-	done  chan struct{}                                  
+	queue chan []byte
+	done  chan struct{}
 )
 
-
-type queueWriter struct{}
-
-func (queueWriter) Write(p []byte) (int, error) {
-
-	record := make([]byte, len(p))
-	copy(record, p)
+// write costruisce una riga JSON (time, level, msg, poi le coppie chiave/valore)
+// e la mette in coda. Se la coda è piena o Init non è stato chiamato, la scarta.
+func write(level, msg string, args ...any) {
+	var b bytes.Buffer
+	b.WriteByte('{')
+	field(&b, "time", time.Now().Format(time.RFC3339Nano))
+	b.WriteByte(',')
+	field(&b, "level", level)
+	b.WriteByte(',')
+	field(&b, "msg", msg)
+	for i := 0; i < len(args); i += 2 {
+		b.WriteByte(',')
+		if i+1 == len(args) { // argomento dispari senza chiave
+			field(&b, "!BADKEY", args[i])
+			break
+		}
+		field(&b, fmt.Sprint(args[i]), args[i+1])
+	}
+	b.WriteString("}\n")
 
 	select {
-	case queue <- record:
+	case queue <- b.Bytes():
 	default:
 	}
-
-	
-	return len(p), nil
 }
 
+func field(b *bytes.Buffer, key string, val any) {
+	if e, ok := val.(error); ok {
+		val = e.Error()
+	}
+	k, _ := json.Marshal(key)
+	v, err := json.Marshal(val)
+	if err != nil {
+		v, _ = json.Marshal(fmt.Sprint(val))
+	}
+	b.Write(k)
+	b.WriteByte(':')
+	b.Write(v)
+}
 
 func Init(filePath string) error {
 	dst := io.Writer(os.Stdout)
@@ -47,20 +69,18 @@ func Init(filePath string) error {
 		if err != nil {
 			return err
 		}
-		dst = io.MultiWriter(os.Stdout, f) 
+		dst = io.MultiWriter(os.Stdout, f)
 	}
 	queue = make(chan []byte, QueueSize)
 	done = make(chan struct{})
-	go func() { 
+	go func() {
 		for b := range queue {
 			_, _ = dst.Write(b)
 		}
 		close(done)
 	}()
-	out = slog.New(slog.NewJSONHandler(queueWriter{}, nil))
 	return nil
 }
-
 
 func Close() {
 	if queue != nil {
@@ -70,17 +90,17 @@ func Close() {
 	}
 }
 
-//queste perche senno chi e esterno non puo usare direttament 
-func Info(msg string, args ...any)  { out.Info(msg, args...) }
-func Warn(msg string, args ...any)  { out.Warn(msg, args...) }
-func Error(msg string, args ...any) { out.Error(msg, args...) }
+// queste perche senno chi e esterno non puo usare direttamente
+func Info(msg string, args ...any)  { write("INFO", msg, args...) }
+func Warn(msg string, args ...any)  { write("WARN", msg, args...) }
+func Error(msg string, args ...any) { write("ERROR", msg, args...) }
 
 func Connect(connID int, addr string) {
-	out.Info("client_connected", "conn_id", connID, "addr", addr)
+	Info("client_connected", "conn_id", connID, "addr", addr)
 }
 
 func Disconnect(connID int, addr, player string, d time.Duration) {
-	out.Info("client_disconnected", "conn_id", connID, "addr", addr,
+	Info("client_disconnected", "conn_id", connID, "addr", addr,
 		"player", player, "duration_ms", d.Milliseconds())
 }
 
@@ -89,26 +109,25 @@ func Command(connID int, player, line string) {
 	if len(params) > 300 {
 		params = params[:300]
 	}
-	out.Info("command", "conn_id", connID, "player", player,
+	Info("command", "conn_id", connID, "player", player,
 		"cmd", strings.ToUpper(name), "params", params)
 }
-
 
 func Response(player, line string) {
 	if len(line) > 300 {
 		line = line[:300]
 	}
 	if f := strings.Fields(line); len(f) > 1 && f[0] == "ERR" {
-		out.Warn("response_error", "player", player, "code", f[1], "line", line)
+		Warn("response_error", "player", player, "code", f[1], "line", line)
 	} else if strings.HasPrefix(line, "OK") {
-		out.Info("response", "player", player, "line", line)
+		Info("response", "player", player, "line", line)
 	}
 }
 
-func World(event string, args ...any) { out.Info("world_"+event, args...) }
+func World(event string, args ...any) { Info("world_"+event, args...) }
 
 func Quest(player, questID, event string, args ...any) {
-	out.Info("quest_"+event, append([]any{"player", player, "quest", questID}, args...)...)
+	Info("quest_"+event, append([]any{"player", player, "quest", questID}, args...)...)
 }
 
 type counter struct {
@@ -139,7 +158,7 @@ func AllowCommand(connID int, player string) bool {
 	}
 	mu.Unlock()
 	if first {
-		out.Warn("command_flood", "conn_id", connID, "player", player,
+		Warn("command_flood", "conn_id", connID, "player", player,
 			"limit_per_sec", MaxCommandsPerSecond)
 	}
 	return ok
@@ -163,7 +182,7 @@ func AllowConnection(addr string) bool {
 	mu.Lock()
 	defer mu.Unlock()
 	if conns[ip] >= MaxConnectionsPerIP {
-		out.Warn("rapid_connections", "ip", ip, "limit", MaxConnectionsPerIP)
+		Warn("rapid_connections", "ip", ip, "limit", MaxConnectionsPerIP)
 		return false
 	}
 	conns[ip]++
