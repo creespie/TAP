@@ -20,6 +20,8 @@ func RemovePlayer(w *world.World, player *world.Player) {
 // general function to move player to next room
 func MovePlayer(player *world.Player, room *world.Room) {
 	delete(player.CurrentRoom.Players, player.Name)
+	SendToAll(player.CurrentRoom.Players, "EVT ROOM PRESENCE LEAVE "+player.Name)
+	SendToAll(room.Players, "EVT ROOM PRESENCE ENTER "+player.Name)
 	room.Players[player.Name] = player
 	player.CurrentRoom = room
 }

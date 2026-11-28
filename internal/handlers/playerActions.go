@@ -90,6 +90,7 @@ func HandleMove(w *world.World, dir string, player *world.Player) {
 		return
 	}
 	MovePlayer(player, next)
+	trySpawn(w, next)
 	Send(player, "OK room="+next.Id)
 }
 

@@ -42,7 +42,7 @@ type Room struct {
 	AccessibleRooms map[string]*Room // key = direction (north, south, ...)
 	NpcPosition     [2]int
 	ObjPosition     [2]int
-	MaxItems        int       // max objects in the room
+	MaxItems        int       // max instances of each native item type
 	SpawnTypes      []string  // native item types: the ones placed here by the world file
 	LastSpawnCheck  time.Time // last time the respawn check ran here
 }

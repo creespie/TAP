@@ -8,7 +8,8 @@
 *.so
 *.dylib
 server
-
+main
+server.log
 # Test binary, built with `go test -c`
 *.test
 

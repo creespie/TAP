@@ -26,10 +26,10 @@ type fileRoom struct {
 	Description string            `json:"description"`
 	Width       int               `json:"width"`
 	Height      int               `json:"height"`
-	Exits       map[string]string `json:"exits"` // direction -> room id
-	Items       []string          `json:"items"` // item ids placed in this room
-	Npcs        []string          `json:"npcs"`  // npc ids placed in this room
-	MaxItems int `json:"max_items"` // 0 or missing = DefaultRoomMaxItems
+	Exits       map[string]string `json:"exits"`     // direction -> room id
+	Items       []string          `json:"items"`     // item ids placed in this room
+	Npcs        []string          `json:"npcs"`      // npc ids placed in this room
+	MaxItems    int               `json:"max_items"` // max instances of each native item type, 0 or missing = DefaultRoomMaxItems
 }
 
 type fileItem struct {
@@ -311,9 +311,9 @@ func build(fw *fileWorld) *World {
 			Objects:         make(map[int]*Object, len(r.Items)),
 			Players:         make(map[string]*Player),
 			AccessibleRooms: make(map[string]*Room, len(r.Exits)),
-			room.MaxItems: r.MaxItems
+			MaxItems:        r.MaxItems,
 		}
-		if room.MaxItems == 0{
+		if room.MaxItems == 0 {
 			room.MaxItems = DefaultRoomMaxItems
 		}
 		seen := make(map[string]bool)
@@ -324,7 +324,7 @@ func build(fw *fileWorld) *World {
 				seen[iid] = true
 				room.SpawnTypes = append(room.SpawnTypes, iid)
 			}
-		}	
+		}
 		for _, nid := range r.Npcs {
 			room.Npc[nid] = w.Npcs[nid]
 		}
