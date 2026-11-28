@@ -1,3 +1,4 @@
+
 package main
 
 import (
@@ -46,10 +47,11 @@ func getServerIP(scanner *bufio.Scanner) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	// accept "localhost" or a valid IP address, otherwise return an error
+
 	if strings.EqualFold(ip, "localhost") {
 		return "localhost", nil
 	}
+
 	if ip == "" || net.ParseIP(ip) == nil {
 		return "", fmt.Errorf("invalid server IP")
 	}
@@ -112,6 +114,7 @@ func authenticate(scanner *bufio.Scanner, conn net.Conn, serverReader *bufio.Rea
 		if err != nil {
 			return fmt.Errorf("server error: %w", err)
 		}
+
 		response = strings.TrimSpace(response)
 		fmt.Println("<", response)
 
@@ -166,14 +169,19 @@ func main() {
 		return
 	}
 
-	var quitting atomic.Bool
+	// Go 1.18 compatible atomic flag
+	var quitting int32
+
 	done := make(chan struct{})
+
 	go serverListener(serverReader, &quitting, done)
 
 	fmt.Println()
+
 	// Main command loop
 	for {
 		fmt.Print("> ")
+
 		message, err := readInput(scanner)
 		if err != nil {
 			if err.Error() == "input closed" {
@@ -194,7 +202,7 @@ func main() {
 		}
 
 		if strings.EqualFold(message, "QUIT") {
-			quitting.Store(true)
+			atomic.StoreInt32(&quitting, 1)
 		}
 
 		if _, err := fmt.Fprintln(conn, message); err != nil {
@@ -202,23 +210,26 @@ func main() {
 			return
 		}
 
-		if quitting.Load() {
-			// wait for "OK bye" and the server closing the connection
+		if atomic.LoadInt32(&quitting) == 1 {
+			// Wait for "OK bye" and server disconnection
 			select {
 			case <-done:
 			case <-time.After(quitWait):
 			}
+
 			fmt.Println("Disconnected.")
 			return
 		}
 	}
 }
-func serverListener(serverReader *bufio.Reader, quitting *atomic.Bool, done chan<- struct{}) {
+
+func serverListener(serverReader *bufio.Reader, quitting *int32, done chan<- struct{}) {
 	defer close(done)
+
 	for {
 		response, err := serverReader.ReadString('\n')
 		if err != nil {
-			if !quitting.Load() {
+			if atomic.LoadInt32(quitting) == 0 {
 				fmt.Println("\nServer disconnected:", err)
 				os.Exit(0)
 			}
@@ -226,7 +237,8 @@ func serverListener(serverReader *bufio.Reader, quitting *atomic.Bool, done chan
 		}
 
 		line := strings.TrimSpace(response)
-		if quitting.Load() {
+
+		if atomic.LoadInt32(quitting) == 1 {
 			fmt.Println("\r< " + line)
 		} else {
 			fmt.Print("\r< " + line + "\n> ")
