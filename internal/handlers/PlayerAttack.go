@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	"tap/internal/world"
 )
@@ -96,6 +97,7 @@ func npcDies(killer *world.Player, npc *world.Npc) {
 	room := killer.CurrentRoom
 	npc.Hp = 0
 	npc.IsAlive = false
+	npc.DiedAt = time.Now()
 	for _, p := range room.Players {
 		if p.Target == npc {
 			p.Target = nil

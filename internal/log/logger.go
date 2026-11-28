@@ -70,9 +70,11 @@ func Init(filePath string) error {
 			return err
 		}
 		dst = io.MultiWriter(os.Stdout, f)
+		dst = io.MultiWriter(os.Stdout, f)
 	}
 	queue = make(chan []byte, QueueSize)
 	done = make(chan struct{})
+	go func() {
 	go func() {
 		for b := range queue {
 			_, _ = dst.Write(b)

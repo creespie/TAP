@@ -13,7 +13,7 @@ import (
 	"strings"
 	"syscall"
 	"tap/internal/handlers"
-	"tap/internal/logger"
+	"tap/internal/log"
 	"tap/internal/transport"
 	"tap/internal/world"
 	"time"
@@ -33,7 +33,6 @@ func cleanLine(raw string) (string, error) {
 
 func handleConnection(conn net.Conn, counter int, registry *transport.ConnRegistry, w *world.World) {
 	fmt.Printf("connected client %d: %s\n", counter, conn.RemoteAddr())
-	
 
 	defer registry.Remove(counter)
 	defer fmt.Printf("disconnected client number %d\n", counter)
@@ -75,7 +74,6 @@ func handleConnection(conn net.Conn, counter int, registry *transport.ConnRegist
 			continue
 		}
 
-		
 		if !logger.AllowCommand(counter, "") {
 			continue
 		}
@@ -88,7 +86,6 @@ func handleConnection(conn net.Conn, counter int, registry *transport.ConnRegist
 			continue
 		}
 
-	
 		if !logger.AllowCommand(counter, "") {
 			continue
 		}

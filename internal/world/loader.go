@@ -29,6 +29,7 @@ type fileRoom struct {
 	Exits       map[string]string `json:"exits"` // direction -> room id
 	Items       []string          `json:"items"` // item ids placed in this room
 	Npcs        []string          `json:"npcs"`  // npc ids placed in this room
+	MaxItems int `json:"max_items"` // 0 or missing = DefaultRoomMaxItems
 }
 
 type fileItem struct {
@@ -189,6 +190,9 @@ func validate(fw *fileWorld) []string {
 		if r.Name == "" {
 			add("room %q: missing name", rid)
 		}
+		if r.MaxItems < 0 {
+			add("room %q: max_items must be >= 0", rid)
+		}
 		for dir, target := range r.Exits {
 			if strings.TrimSpace(dir) == "" || strings.ContainsAny(dir, " \t") {
 				add("room %q: invalid exit direction %q", rid, dir)
@@ -244,6 +248,7 @@ func build(fw *fileWorld) *World {
 		Items:     make(map[string]*Object, len(fw.Items)),
 		Npcs:      make(map[string]*Npc, len(fw.Npcs)),
 		Quests:    make(map[string]*Quest, len(fw.Quests)),
+		Created:   make(map[string]int),
 		ItemCount: 1,
 	}
 
@@ -306,11 +311,20 @@ func build(fw *fileWorld) *World {
 			Objects:         make(map[int]*Object, len(r.Items)),
 			Players:         make(map[string]*Player),
 			AccessibleRooms: make(map[string]*Room, len(r.Exits)),
+			room.MaxItems: r.MaxItems
 		}
+		if room.MaxItems == 0{
+			room.MaxItems = DefaultRoomMaxItems
+		}
+		seen := make(map[string]bool)
 		for _, iid := range r.Items {
 			inst := w.NewItem(iid)
 			room.Objects[inst.ItemNumber] = inst
-		}
+			if !seen[iid] {
+				seen[iid] = true
+				room.SpawnTypes = append(room.SpawnTypes, iid)
+			}
+		}	
 		for _, nid := range r.Npcs {
 			room.Npc[nid] = w.Npcs[nid]
 		}

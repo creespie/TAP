@@ -4,6 +4,7 @@ import (
 	"math/rand"
 	"net"
 	"sync"
+	"time"
 )
 
 type World struct {
@@ -17,6 +18,7 @@ type World struct {
 	RespawnRoom *Room              // safe room for players at 0 HP
 	ItemCount   int
 	Rand        *rand.Rand
+	Created     map[string]int
 }
 
 func (w *World) NewItem(typeID string) *Object {
@@ -24,6 +26,7 @@ func (w *World) NewItem(typeID string) *Object {
 	inst := *original // copia di tutta la struct
 	inst.ItemNumber = w.ItemCount
 	w.ItemCount++
+	w.Created[typeID]++
 	return &inst
 
 }
@@ -39,6 +42,9 @@ type Room struct {
 	AccessibleRooms map[string]*Room // key = direction (north, south, ...)
 	NpcPosition     [2]int
 	ObjPosition     [2]int
+	MaxItems        int       // max objects in the room
+	SpawnTypes      []string  // native item types: the ones placed here by the world file
+	LastSpawnCheck  time.Time // last time the respawn check ran here
 }
 
 type Npc struct {
@@ -53,6 +59,7 @@ type Npc struct {
 	Dialogs     map[int]string
 	Action      map[int]*Action
 	Quest       *Quest
+	DiedAt      time.Time // when the npc was killed
 }
 
 type Quest struct {
